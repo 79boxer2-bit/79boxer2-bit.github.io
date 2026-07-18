@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>하늘공인중개사 | 화성 남양읍 매물정보</title>
+<meta name="description" content="화성시 남양읍 17년 전문 하늘공인중개사의 실시간 매물 정보. 네이버 부동산 등록 매물을 한눈에 확인하세요.">
+<style>
+:root{
+  --sky:#1e88d2; --sky-dark:#155f95; --sky-light:#e8f4fc;
+  --ink:#222; --gray:#767676; --line:#e5e8eb; --bg:#f7f9fb;
+  --sale:#d32f2f; --jeonse:#2e7d32; --wolse:#6a1b9a;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
+a{color:inherit;text-decoration:none}
+
+/* header */
+header{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+.head-inner{max-width:720px;margin:0 auto;padding:14px 16px;display:flex;align-items:center;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-logo{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--sky),#5db6ee);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:18px}
+.brand h1{font-size:18px;font-weight:800;letter-spacing:-.3px}
+.brand p{font-size:11.5px;color:var(--gray);letter-spacing:-.2px}
+.call-btn{background:var(--sky);color:#fff;font-weight:700;font-size:14px;padding:9px 14px;border-radius:8px;white-space:nowrap}
+
+/* hero */
+.hero{background:linear-gradient(135deg,#12354e,#1e6ba8);color:#fff;padding:26px 16px}
+.hero-inner{max-width:720px;margin:0 auto}
+.hero h2{font-size:20px;font-weight:800;letter-spacing:-.4px;margin-bottom:6px}
+.hero p{font-size:13px;opacity:.85}
+.badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.badge{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);font-size:11.5px;padding:4px 10px;border-radius:99px}
+
+/* filters */
+.filters{max-width:720px;margin:0 auto;padding:12px 16px 4px;position:sticky;top:67px;background:var(--bg);z-index:10}
+.chip-row{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none}
+.chip-row::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;border:1px solid var(--line);background:#fff;color:#444;font-size:13px;font-weight:600;padding:7px 14px;border-radius:99px;cursor:pointer;transition:.15s}
+.chip.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.meta-row{max-width:720px;margin:0 auto;padding:4px 16px 8px;display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--gray)}
+
+/* list */
+.list{max-width:720px;margin:0 auto;padding:4px 16px 32px;display:flex;flex-direction:column;gap:12px}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;cursor:pointer;transition:.15s}
+.card:active{transform:scale(.99)}
+.thumb{flex:0 0 118px;min-height:118px;background:var(--sky-light) center/cover no-repeat;position:relative}
+.thumb.noimg::after{content:'사진 준비중';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;color:#9bbdd4}
+.card-body{flex:1;padding:12px 14px;min-width:0}
+.trade-tag{display:inline-block;font-size:11px;font-weight:800;padding:2px 7px;border-radius:5px;margin-right:6px;vertical-align:1px}
+.trade-매매{background:#fdecec;color:var(--sale)}
+.trade-전세{background:#eaf5ea;color:var(--jeonse)}
+.trade-월세{background:#f3eafa;color:var(--wolse)}
+.trade-단기임대{background:#fff3e0;color:#e65100}
+.price{font-size:17px;font-weight:800;letter-spacing:-.3px}
+.title{font-size:14px;font-weight:600;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.spec{font-size:12.5px;color:var(--gray);margin-top:3px}
+.desc{font-size:12.5px;color:#555;margin-top:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card-foot{margin-top:7px;display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+.tag{font-size:10.5px;color:var(--sky-dark);background:var(--sky-light);padding:2px 7px;border-radius:5px}
+.confirm{font-size:10.5px;color:#aaa;margin-left:auto}
+.empty{text-align:center;padding:60px 0;color:var(--gray);font-size:14px}
+
+/* notice + footer */
+.notice{max-width:720px;margin:0 auto;padding:0 16px 16px;font-size:11.5px;color:#999}
+footer{background:#1c2833;color:#c6cdd4;padding:26px 16px;font-size:12.5px}
+.foot-inner{max-width:720px;margin:0 auto}
+.foot-inner strong{color:#fff;font-size:15px;display:block;margin-bottom:8px}
+.foot-inner p{margin:2px 0}
+.foot-call{display:inline-block;margin-top:12px;background:var(--sky);color:#fff;font-weight:700;padding:10px 18px;border-radius:8px}
+.foot-copy{margin-top:16px;font-size:11px;color:#7d8790}
+@media(min-width:600px){
+  .thumb{flex-basis:150px}
+  .list{gap:14px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="head-inner">
+    <a class="brand" href="#">
+      <div class="brand-logo">하</div>
+      <div>
+        <h1>하늘공인중개사</h1>
+        <p>화성 남양읍 부동산 전문 · 17년</p>
+      </div>
+    </a>
+    <a class="call-btn" id="callBtn" href="tel:0313669919">📞 031-366-9919</a>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="hero-inner">
+    <h2>남양읍 매물, 지금 바로 확인하세요</h2>
+    <p>네이버 부동산에 등록된 저희 사무소 매물이 자동으로 업데이트됩니다.</p>
+    <div class="badges">
+      <span class="badge">남양읍 17년 전문</span>
+      <span class="badge">KB부동산 시세협력</span>
+      <span class="badge">한국부동산원 시세협력</span>
+    </div>
+  </div>
+</div>
+
+<div class="filters">
+  <div class="chip-row" id="tradeChips"></div>
+  <div class="chip-row" id="typeChips"></div>
+</div>
+<div class="meta-row">
+  <span id="countText"></span>
+  <span id="updatedText"></span>
+</div>
+
+<div class="list" id="list"></div>
+<div class="notice">※ 본 페이지의 매물 정보는 네이버 부동산에 등록된 당사 매물을 기준으로 자동 갱신되며, 거래 완료 등으로 실제와 차이가 있을 수 있습니다. 정확한 내용은 전화로 확인 부탁드립니다.</div>
+
+<footer>
+  <div class="foot-inner">
+    <strong>하늘공인중개사</strong>
+    <p>대표(개설등록자): 김용희</p>
+    <p>중개사무소 등록번호: 가3628-2298</p>
+    <p>소재지: 경기도 화성시 남양읍 시청로102번길 51 시티프라디움1차 아파트 상가2동 118호</p>
+    <p>전화: 031-366-9919</p>
+    <a class="foot-call" id="footCallBtn" href="tel:0313669919">📞 상담 전화하기</a>
+    <p class="foot-copy">© 하늘공인중개사. 본 사이트의 매물정보 무단 복제를 금합니다.</p>
+  </div>
+</footer>
+
+<script>
+// ─── 샘플 데이터 (listings.json 로드 실패 시 표시) ───
+const SAMPLE = {
+  updatedAt: "2026-07-17 09:00",
+  items: [
+    {id:"S1", trade:"매매", type:"아파트", title:"[샘플] 남양 ○○아파트 84A", price:"3억 2,000", rentPrice:"", area2:84.9, floor:"12/15", direction:"남향", desc:"올수리 완료, 시청 도보 5분. 샘플 매물입니다 — 네이버 연동 후 실제 매물로 교체됩니다.", tags:["역세권","올수리"], img:"", confirmedAt:"26.07.15", link:"#"},
+    {id:"S2", trade:"전세", type:"빌라", title:"[샘플] 남양읍 신축빌라 3룸", price:"1억 8,000", rentPrice:"", area2:59.8, floor:"3/4", direction:"남동향", desc:"신축 첫입주, 주차 세대당 1대. 샘플 매물입니다.", tags:["신축","주차가능"], img:"", confirmedAt:"26.07.14", link:"#"},
+    {id:"S3", trade:"월세", type:"상가", title:"[샘플] 남양시장 인근 1층 상가", price:"3,000", rentPrice:"150", area2:33.0, floor:"1/5", direction:"", desc:"코너 자리, 유동인구 많음. 샘플 매물입니다.", tags:["1층","코너"], img:"", confirmedAt:"26.07.12", link:"#"},
+    {id:"S4", trade:"매매", type:"토지", title:"[샘플] 남양읍 계획관리 토지 200평", price:"4억 5,000", rentPrice:"", area2:661.0, floor:"", direction:"", desc:"도로 접함, 건축 가능. 샘플 매물입니다.", tags:["도로접","계획관리"], img:"", confirmedAt:"26.07.10", link:"#"}
+  ]
+};
+
+let DATA = null;
+let tradeSel = "전체", typeSel = "전체";
+
+function fmtArea(a){ if(!a) return ""; return a + "㎡ (" + Math.round(a/3.3058) + "평)"; }
+
+function priceLabel(it){
+  if(it.trade === "월세" || it.trade === "단기임대") return it.price + " / " + it.rentPrice;
+  return it.price;
+}
+
+function render(){
+  const items = DATA.items.filter(it =>
+    (tradeSel === "전체" || it.trade === tradeSel) &&
+    (typeSel === "전체" || it.type === typeSel)
+  );
+  const list = document.getElementById("list");
+  document.getElementById("countText").textContent = "매물 " + items.length + "건";
+  document.getElementById("updatedText").textContent = DATA.updatedAt ? DATA.updatedAt + " 기준" : "";
+  if(!items.length){ list.innerHTML = '<div class="empty">조건에 맞는 매물이 없습니다.</div>'; return; }
+  list.innerHTML = items.map(it => `
+    <a class="card" href="${it.link}" target="_blank" rel="noopener">
+      <div class="thumb ${it.img?"":"noimg"}" ${it.img?`style="background-image:url('${it.img}')"`:""}></div>
+      <div class="card-body">
+        <div>
+          <span class="trade-tag trade-${it.trade}">${it.trade}</span>
+          <span class="price">${priceLabel(it)}</span>
+        </div>
+        <div class="title">${it.type} · ${it.title}</div>
+        <div class="spec">${[fmtArea(it.area2), it.floor?it.floor+"층":"", it.direction].filter(Boolean).join(" · ")}</div>
+        ${it.desc?`<div class="desc">${it.desc}</div>`:""}
+        <div class="card-foot">
+          ${(it.tags||[]).slice(0,3).map(t=>`<span class="tag">${t}</span>`).join("")}
+          ${it.confirmedAt?`<span class="confirm">확인 ${it.confirmedAt}</span>`:""}
+        </div>
+      </div>
+    </a>`).join("");
+}
+
+function buildChips(){
+  const trades = ["전체","매매","전세","월세"];
+  const types = ["전체", ...new Set(DATA.items.map(i=>i.type))];
+  const tc = document.getElementById("tradeChips");
+  const yc = document.getElementById("typeChips");
+  tc.innerHTML = trades.map(t=>`<button class="chip ${t===tradeSel?"on":""}" data-k="trade" data-v="${t}">${t}</button>`).join("");
+  yc.innerHTML = types.map(t=>`<button class="chip ${t===typeSel?"on":""}" data-k="type" data-v="${t}">${t}</button>`).join("");
+  document.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{
+    if(b.dataset.k==="trade") tradeSel=b.dataset.v; else typeSel=b.dataset.v;
+    buildChips(); render();
+  });
+}
+
+fetch("listings.json?t="+Math.floor(Date.now()/60000))
+  .then(r=>{ if(!r.ok) throw 0; return r.json(); })
+  .then(j=>{ DATA=j; buildChips(); render(); })
+  .catch(()=>{ DATA=SAMPLE; buildChips(); render(); });
+</script>
+</body>
+</html>
