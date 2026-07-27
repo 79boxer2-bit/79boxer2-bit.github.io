@@ -44,7 +44,8 @@ header{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0
 .list{max-width:720px;margin:0 auto;padding:4px 16px 32px;display:flex;flex-direction:column;gap:12px}
 .card{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;cursor:pointer;transition:.15s}
 .card:active{transform:scale(.99)}
-.thumb{flex:0 0 118px;min-height:118px;background:var(--sky-light) center/cover no-repeat;position:relative}
+.thumb{flex:0 0 118px;min-height:118px;background:var(--sky-light);position:relative;overflow:hidden}
+.thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
 .thumb.noimg::after{content:'사진 준비중';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;color:#9bbdd4}
 .card-body{flex:1;padding:12px 14px;min-width:0}
 .trade-tag{display:inline-block;font-size:11px;font-weight:800;padding:2px 7px;border-radius:5px;margin-right:6px;vertical-align:1px}
@@ -195,7 +196,7 @@ function render(){
   if(!items.length){ list.innerHTML = '<div class="empty">조건에 맞는 매물이 없습니다.</div>'; return; }
   list.innerHTML = items.map(it => `
     <div class="card" data-id="${esc(it.id)}">
-      <div class="thumb ${it.img?"":"noimg"}" ${it.img?`style="background-image:url('${esc(it.img)}')"`:""}></div>
+      <div class="thumb ${it.img?"":"noimg"}">${it.img?`<img loading="lazy" src="${esc(it.img)}" alt="" onerror="this.parentElement.classList.add('noimg');this.remove()">`:""}</div>
       <div class="card-body">
         <div>
           <span class="trade-tag trade-${esc(it.trade)}">${esc(it.trade)}</span>
@@ -216,16 +217,9 @@ function render(){
 function openDetail(id){
   const it = DATA.items.find(x => String(x.id) === String(id));
   if(!it) return;
-  const bigImg = it.img ? it.img.replace(/type=f\d+_\d+/, "type=f640_480") : "";
   const imgEl = document.getElementById("mImg");
   imgEl.textContent = it.img ? "" : "등록된 사진이 없습니다";
-  imgEl.style.backgroundImage = "";
-  if(it.img){
-    const probe = new Image();
-    probe.onload = () => imgEl.style.backgroundImage = `url('${bigImg}')`;
-    probe.onerror = () => imgEl.style.backgroundImage = `url('${it.img}')`;
-    probe.src = bigImg;
-  }
+  imgEl.style.backgroundImage = it.img ? `url('${it.img}')` : "";
   document.getElementById("mHeadTitle").textContent = it.type + " · " + it.trade;
   const tt = document.getElementById("mTradeTag");
   tt.className = "trade-tag trade-" + it.trade;
