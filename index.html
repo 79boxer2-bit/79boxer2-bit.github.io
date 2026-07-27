@@ -61,6 +61,35 @@ header{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0
 .confirm{font-size:10.5px;color:#aaa;margin-left:auto}
 .empty{text-align:center;padding:60px 0;color:var(--gray);font-size:14px}
 
+/* detail modal */
+.modal-bg{position:fixed;inset:0;background:rgba(10,20,30,.55);z-index:50;display:none;align-items:flex-end;justify-content:center}
+.modal-bg.show{display:flex}
+.modal{background:#fff;width:100%;max-width:560px;max-height:92vh;overflow-y:auto;border-radius:18px 18px 0 0;animation:up .22s ease}
+@keyframes up{from{transform:translateY(40px);opacity:.6}to{transform:translateY(0);opacity:1}}
+@media(min-width:600px){
+  .modal-bg{align-items:center}
+  .modal{border-radius:18px;max-height:88vh}
+  .thumb{flex-basis:150px}
+  .list{gap:14px}
+}
+.m-head{position:sticky;top:0;background:#fff;display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line);z-index:2}
+.m-head b{font-size:15px}
+.m-close{border:0;background:#f2f4f6;width:32px;height:32px;border-radius:50%;font-size:16px;cursor:pointer;color:#555}
+.m-img{width:100%;aspect-ratio:4/3;background:var(--sky-light) center/cover no-repeat;display:flex;align-items:center;justify-content:center;color:#9bbdd4;font-size:13px}
+.m-body{padding:16px 18px 20px}
+.m-price{font-size:22px;font-weight:800;letter-spacing:-.4px;margin:2px 0 2px}
+.m-title{font-size:15px;color:#444;margin-bottom:12px}
+.m-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:14px}
+.m-cell{background:#fff;padding:10px 12px}
+.m-cell .k{font-size:11px;color:var(--gray)}
+.m-cell .v{font-size:14px;font-weight:600;margin-top:2px}
+.m-desc{background:#f8fafb;border-radius:12px;padding:14px;font-size:13.5px;color:#333;white-space:pre-wrap;margin-bottom:14px}
+.m-tags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:16px}
+.m-note{font-size:11px;color:#aaa;margin-bottom:14px}
+.m-actions{display:flex;gap:8px}
+.m-call{flex:1;text-align:center;background:var(--sky);color:#fff;font-weight:800;font-size:15px;padding:14px 0;border-radius:10px}
+.m-naver{flex:0 0 auto;text-align:center;background:#f2f4f6;color:#555;font-weight:600;font-size:13px;padding:14px 16px;border-radius:10px}
+
 /* notice + footer */
 .notice{max-width:720px;margin:0 auto;padding:0 16px 16px;font-size:11.5px;color:#999}
 footer{background:#1c2833;color:#c6cdd4;padding:26px 16px;font-size:12.5px}
@@ -69,10 +98,6 @@ footer{background:#1c2833;color:#c6cdd4;padding:26px 16px;font-size:12.5px}
 .foot-inner p{margin:2px 0}
 .foot-call{display:inline-block;margin-top:12px;background:var(--sky);color:#fff;font-weight:700;padding:10px 18px;border-radius:8px}
 .foot-copy{margin-top:16px;font-size:11px;color:#7d8790}
-@media(min-width:600px){
-  .thumb{flex-basis:150px}
-  .list{gap:14px}
-}
 </style>
 </head>
 <body>
@@ -86,7 +111,7 @@ footer{background:#1c2833;color:#c6cdd4;padding:26px 16px;font-size:12.5px}
         <p>화성 남양읍 부동산 전문 · 17년</p>
       </div>
     </a>
-    <a class="call-btn" id="callBtn" href="tel:0313669919">📞 031-366-9919</a>
+    <a class="call-btn" href="tel:0313669919">📞 031-366-9919</a>
   </div>
 </header>
 
@@ -112,7 +137,28 @@ footer{background:#1c2833;color:#c6cdd4;padding:26px 16px;font-size:12.5px}
 </div>
 
 <div class="list" id="list"></div>
-<div class="notice">※ 본 페이지의 매물 정보는 네이버 부동산에 등록된 당사 매물을 기준으로 자동 갱신되며, 거래 완료 등으로 실제와 차이가 있을 수 있습니다. 정확한 내용은 전화로 확인 부탁드립니다.</div>
+<div class="notice">※ 본 페이지의 매물 정보는 당사가 네이버 부동산에 등록한 광고를 기준으로 자동 갱신되며, 거래 완료 등으로 실제와 차이가 있을 수 있습니다. 정확한 내용은 전화로 확인 부탁드립니다.</div>
+
+<!-- 매물 상세 -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal" id="modal">
+    <div class="m-head"><b id="mHeadTitle">매물 상세</b><button class="m-close" id="mClose">✕</button></div>
+    <div class="m-img" id="mImg"></div>
+    <div class="m-body">
+      <div><span class="trade-tag" id="mTradeTag"></span></div>
+      <div class="m-price" id="mPrice"></div>
+      <div class="m-title" id="mTitle"></div>
+      <div class="m-grid" id="mGrid"></div>
+      <div class="m-desc" id="mDesc"></div>
+      <div class="m-tags" id="mTags"></div>
+      <div class="m-note" id="mNote"></div>
+      <div class="m-actions">
+        <a class="m-call" href="tel:0313669919">📞 이 매물 문의하기</a>
+        <a class="m-naver" id="mNaver" target="_blank" rel="noopener">네이버 원본</a>
+      </div>
+    </div>
+  </div>
+</div>
 
 <footer>
   <div class="foot-inner">
@@ -121,32 +167,22 @@ footer{background:#1c2833;color:#c6cdd4;padding:26px 16px;font-size:12.5px}
     <p>중개사무소 등록번호: 가3628-2298</p>
     <p>소재지: 경기도 화성시 남양읍 시청로102번길 51 시티프라디움1차 아파트 상가2동 118호</p>
     <p>전화: 031-366-9919</p>
-    <a class="foot-call" id="footCallBtn" href="tel:0313669919">📞 상담 전화하기</a>
+    <a class="foot-call" href="tel:0313669919">📞 상담 전화하기</a>
     <p class="foot-copy">© 하늘공인중개사. 본 사이트의 매물정보 무단 복제를 금합니다.</p>
   </div>
 </footer>
 
 <script>
-// ─── 샘플 데이터 (listings.json 로드 실패 시 표시) ───
-const SAMPLE = {
-  updatedAt: "2026-07-17 09:00",
-  items: [
-    {id:"S1", trade:"매매", type:"아파트", title:"[샘플] 남양 ○○아파트 84A", price:"3억 2,000", rentPrice:"", area2:84.9, floor:"12/15", direction:"남향", desc:"올수리 완료, 시청 도보 5분. 샘플 매물입니다 — 네이버 연동 후 실제 매물로 교체됩니다.", tags:["역세권","올수리"], img:"", confirmedAt:"26.07.15", link:"#"},
-    {id:"S2", trade:"전세", type:"빌라", title:"[샘플] 남양읍 신축빌라 3룸", price:"1억 8,000", rentPrice:"", area2:59.8, floor:"3/4", direction:"남동향", desc:"신축 첫입주, 주차 세대당 1대. 샘플 매물입니다.", tags:["신축","주차가능"], img:"", confirmedAt:"26.07.14", link:"#"},
-    {id:"S3", trade:"월세", type:"상가", title:"[샘플] 남양시장 인근 1층 상가", price:"3,000", rentPrice:"150", area2:33.0, floor:"1/5", direction:"", desc:"코너 자리, 유동인구 많음. 샘플 매물입니다.", tags:["1층","코너"], img:"", confirmedAt:"26.07.12", link:"#"},
-    {id:"S4", trade:"매매", type:"토지", title:"[샘플] 남양읍 계획관리 토지 200평", price:"4억 5,000", rentPrice:"", area2:661.0, floor:"", direction:"", desc:"도로 접함, 건축 가능. 샘플 매물입니다.", tags:["도로접","계획관리"], img:"", confirmedAt:"26.07.10", link:"#"}
-  ]
-};
-
+const SAMPLE = { updatedAt:"", items: [] };
 let DATA = null;
 let tradeSel = "전체", typeSel = "전체";
 
-function fmtArea(a){ if(!a) return ""; return a + "㎡ (" + Math.round(a/3.3058) + "평)"; }
-
+function fmtArea(a){ const n = parseFloat(a); if(!n) return ""; return n + "㎡ (" + Math.round(n/3.3058) + "평)"; }
 function priceLabel(it){
-  if(it.trade === "월세" || it.trade === "단기임대") return it.price + " / " + it.rentPrice;
+  if((it.trade === "월세" || it.trade === "단기임대") && it.rentPrice) return it.price + " / " + it.rentPrice;
   return it.price;
 }
+function esc(s){ return String(s||"").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 function render(){
   const items = DATA.items.filter(it =>
@@ -158,23 +194,70 @@ function render(){
   document.getElementById("updatedText").textContent = DATA.updatedAt ? DATA.updatedAt + " 기준" : "";
   if(!items.length){ list.innerHTML = '<div class="empty">조건에 맞는 매물이 없습니다.</div>'; return; }
   list.innerHTML = items.map(it => `
-    <a class="card" href="${it.link}" target="_blank" rel="noopener">
-      <div class="thumb ${it.img?"":"noimg"}" ${it.img?`style="background-image:url('${it.img}')"`:""}></div>
+    <div class="card" data-id="${esc(it.id)}">
+      <div class="thumb ${it.img?"":"noimg"}" ${it.img?`style="background-image:url('${esc(it.img)}')"`:""}></div>
       <div class="card-body">
         <div>
-          <span class="trade-tag trade-${it.trade}">${it.trade}</span>
-          <span class="price">${priceLabel(it)}</span>
+          <span class="trade-tag trade-${esc(it.trade)}">${esc(it.trade)}</span>
+          <span class="price">${esc(priceLabel(it))}</span>
         </div>
-        <div class="title">${it.type} · ${it.title}</div>
-        <div class="spec">${[fmtArea(it.area2), it.floor?it.floor+"층":"", it.direction].filter(Boolean).join(" · ")}</div>
-        ${it.desc?`<div class="desc">${it.desc}</div>`:""}
+        <div class="title">${esc(it.type)} · ${esc(it.title)}</div>
+        <div class="spec">${[fmtArea(it.area2), it.floor?it.floor+"층":"", it.direction].filter(Boolean).map(esc).join(" · ")}</div>
+        ${it.desc?`<div class="desc">${esc(it.desc)}</div>`:""}
         <div class="card-foot">
-          ${(it.tags||[]).slice(0,3).map(t=>`<span class="tag">${t}</span>`).join("")}
-          ${it.confirmedAt?`<span class="confirm">확인 ${it.confirmedAt}</span>`:""}
+          ${(it.tags||[]).slice(0,3).map(t=>`<span class="tag">${esc(t)}</span>`).join("")}
+          ${it.confirmedAt?`<span class="confirm">확인 ${esc(it.confirmedAt)}</span>`:""}
         </div>
       </div>
-    </a>`).join("");
+    </div>`).join("");
+  document.querySelectorAll(".card").forEach(c => c.onclick = () => openDetail(c.dataset.id));
 }
+
+function openDetail(id){
+  const it = DATA.items.find(x => String(x.id) === String(id));
+  if(!it) return;
+  const bigImg = it.img ? it.img.replace(/type=f\d+_\d+/, "type=f640_480") : "";
+  const imgEl = document.getElementById("mImg");
+  imgEl.textContent = it.img ? "" : "등록된 사진이 없습니다";
+  imgEl.style.backgroundImage = "";
+  if(it.img){
+    const probe = new Image();
+    probe.onload = () => imgEl.style.backgroundImage = `url('${bigImg}')`;
+    probe.onerror = () => imgEl.style.backgroundImage = `url('${it.img}')`;
+    probe.src = bigImg;
+  }
+  document.getElementById("mHeadTitle").textContent = it.type + " · " + it.trade;
+  const tt = document.getElementById("mTradeTag");
+  tt.className = "trade-tag trade-" + it.trade;
+  tt.textContent = it.trade;
+  document.getElementById("mPrice").textContent = priceLabel(it);
+  document.getElementById("mTitle").textContent = it.title;
+  const cells = [
+    ["전용면적", fmtArea(it.area2)],
+    ["공급면적", fmtArea(it.area1)],
+    ["층", it.floor ? it.floor + "층" : ""],
+    ["방향", it.direction],
+    ["매물번호", it.id],
+    ["확인일자", it.confirmedAt]
+  ].filter(c => c[1]);
+  document.getElementById("mGrid").innerHTML = cells.map(c =>
+    `<div class="m-cell"><div class="k">${esc(c[0])}</div><div class="v">${esc(c[1])}</div></div>`).join("");
+  const d = document.getElementById("mDesc");
+  d.style.display = it.desc ? "" : "none";
+  d.textContent = it.desc || "";
+  document.getElementById("mTags").innerHTML = (it.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join("");
+  document.getElementById("mNote").textContent = it.verified === "OWNER" ? "✓ 집주인 확인 매물 · 하늘공인중개사 등록 광고" : "하늘공인중개사 등록 광고";
+  document.getElementById("mNaver").href = it.link || "#";
+  document.getElementById("modalBg").classList.add("show");
+  document.body.style.overflow = "hidden";
+}
+function closeDetail(){
+  document.getElementById("modalBg").classList.remove("show");
+  document.body.style.overflow = "";
+}
+document.getElementById("mClose").onclick = closeDetail;
+document.getElementById("modalBg").addEventListener("click", e => { if(e.target.id === "modalBg") closeDetail(); });
+document.addEventListener("keydown", e => { if(e.key === "Escape") closeDetail(); });
 
 function buildChips(){
   const trades = ["전체","매매","전세","월세"];
