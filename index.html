@@ -85,6 +85,14 @@ header{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0
 .m-cell .k{font-size:11px;color:var(--gray)}
 .m-cell .v{font-size:14px;font-weight:600;margin-top:2px}
 .m-desc{background:#f8fafb;border-radius:12px;padding:14px;font-size:13.5px;color:#333;white-space:pre-wrap;margin-bottom:14px}
+.m-legal{border:1px solid var(--line);border-radius:12px;margin-bottom:14px;overflow:hidden}
+.m-legal h4{font-size:12.5px;background:#f2f4f6;padding:9px 12px;color:#444}
+.m-legal dl{display:grid;grid-template-columns:96px 1fr;font-size:12.5px}
+.m-legal dt,.m-legal dd{padding:7px 12px;border-top:1px solid var(--line)}
+.m-legal dt{color:var(--gray);background:#fafbfc}
+.m-legal dd{color:#222;font-weight:600}
+.m-legal dd.na{color:#b0b0b0;font-weight:400}
+.m-legal dd.na a{text-decoration:underline}
 .m-tags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:16px}
 .m-note{font-size:11px;color:#aaa;margin-bottom:14px}
 .m-actions{display:flex;gap:8px}
@@ -151,6 +159,7 @@ footer{background:#1c2833;color:#c6cdd4;padding:26px 16px;font-size:12.5px}
       <div class="m-title" id="mTitle"></div>
       <div class="m-grid" id="mGrid"></div>
       <div class="m-desc" id="mDesc"></div>
+      <div class="m-legal" id="mLegal"></div>
       <div class="m-tags" id="mTags"></div>
       <div class="m-note" id="mNote"></div>
       <div class="m-actions">
@@ -164,7 +173,7 @@ footer{background:#1c2833;color:#c6cdd4;padding:26px 16px;font-size:12.5px}
 <footer>
   <div class="foot-inner">
     <strong>하늘공인중개사</strong>
-    <p>대표(개설등록자): 김용희</p>
+    <p>개업공인중개사(대표): 김용희</p>
     <p>중개사무소 등록번호: 가3628-2298</p>
     <p>소재지: 경기도 화성시 남양읍 시청로102번길 51 시티프라디움1차 아파트 상가2동 118호</p>
     <p>전화: 031-366-9919</p>
@@ -214,6 +223,47 @@ function render(){
   document.querySelectorAll(".card").forEach(c => c.onclick = () => openDetail(c.dataset.id));
 }
 
+let AD = { complexes:{}, items:{} };
+const OFFICE = {
+  name:"하늘공인중개사", owner:"김용희", regNo:"가3628-2298", tel:"031-366-9919",
+  addr:"경기도 화성시 남양읍 시청로102번길 51 시티프라디움1차 아파트 상가2동 118호"
+};
+const KO_NUM = {"한":1,"하나":1,"두":2,"둘":2,"세":3,"셋":3,"네":4,"넷":4,"다섯":5};
+
+// 인터넷 광고 필수 명시사항(공인중개사법 시행령 제17조의2): ad_info.json 입력값 우선, 없으면 태그에서 추정
+function legalInfo(it){
+  const cx = Object.keys(AD.complexes||{}).find(k => (it.title||"").startsWith(k));
+  const src = Object.assign({}, cx ? AD.complexes[cx] : {}, (AD.items||{})[it.id] || {});
+  const tags = it.tags || [];
+  const fromTag = re => { for(const t of tags){ const m = t.match(re); if(m) return m; } return null; };
+  let rooms = src.rooms, baths = src.baths, parking = src.parking;
+  if(!rooms){ const m = fromTag(/^방(한|두|세|네|다섯)개/); if(m) rooms = KO_NUM[m[1]] + "개"; }
+  if(!baths){ const m = fromTag(/^화장실(한|두|세|네)개/); if(m) baths = KO_NUM[m[1]] + "개"; }
+  if(!parking){ const m = fromTag(/^세대당\s*(.+)$/); if(m) parking = "세대당 " + m[1]; }
+  const [fl, total] = String(it.floor||"").split("/");
+  return [
+    ["소재지", src.address || it.title],
+    ["면적", [it.area2 ? "전용 " + fmtArea(it.area2) : "", it.area1 ? "공급 " + fmtArea(it.area1) : ""].filter(Boolean).join(" / ")],
+    ["가격", it.trade + " " + priceLabel(it)],
+    ["종류", it.type],
+    ["거래형태", it.trade],
+    ["층수", fl ? (fl + "층" + (total ? " / 총 " + total + "층" : "")) : ""],
+    ["사용승인일", src.approvalDate],
+    ["방향", it.direction ? it.direction + (src.directionBase ? " (" + src.directionBase + " 기준)" : "") : ""],
+    ["방 / 욕실", (rooms || baths) ? (rooms||"-") + " / " + (baths||"-") : ""],
+    ["입주가능일", src.moveIn],
+    ["주차대수", parking],
+    ["관리비", src.mgmtFee]
+  ];
+}
+function legalHtml(it){
+  const na = `<a href="${esc(it.link||"#")}" target="_blank" rel="noopener">네이버 원본 참고</a>`;
+  const row = (k,v) => `<dt>${esc(k)}</dt>` + (v ? `<dd>${esc(v)}</dd>` : `<dd class="na">${na}</dd>`);
+  const office = [["중개사무소", OFFICE.name], ["개업공인중개사", OFFICE.owner], ["등록번호", OFFICE.regNo], ["연락처", OFFICE.tel], ["사무소 소재지", OFFICE.addr]];
+  return `<h4>중개대상물 표시·광고 명시사항</h4><dl>${legalInfo(it).map(c=>row(c[0],c[1])).join("")}</dl>
+    <h4>중개사무소 정보</h4><dl>${office.map(c=>row(c[0],c[1])).join("")}</dl>`;
+}
+
 function openDetail(id){
   const it = DATA.items.find(x => String(x.id) === String(id));
   if(!it) return;
@@ -239,6 +289,7 @@ function openDetail(id){
   const d = document.getElementById("mDesc");
   d.style.display = it.desc ? "" : "none";
   d.textContent = it.desc || "";
+  document.getElementById("mLegal").innerHTML = legalHtml(it);
   document.getElementById("mTags").innerHTML = (it.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join("");
   document.getElementById("mNote").textContent = it.verified === "OWNER" ? "✓ 집주인 확인 매물 · 하늘공인중개사 등록 광고" : "하늘공인중개사 등록 광고";
   document.getElementById("mNaver").href = it.link || "#";
@@ -266,7 +317,9 @@ function buildChips(){
   });
 }
 
-fetch("listings.json?t="+Math.floor(Date.now()/60000))
+const bust = "?t=" + Math.floor(Date.now()/60000);
+fetch("ad_info.json" + bust).then(r => r.ok ? r.json() : null).then(j => { if(j) AD = j; }).catch(()=>{})
+  .then(() => fetch("listings.json" + bust))
   .then(r=>{ if(!r.ok) throw 0; return r.json(); })
   .then(j=>{ DATA=j; buildChips(); render(); })
   .catch(()=>{ DATA=SAMPLE; buildChips(); render(); });
