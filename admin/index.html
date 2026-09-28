@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>광고 관리 | 하늘공인중개사</title>
+<style>
+:root{
+  --sky:#1e88d2; --sky-dark:#155f95; --sky-light:#e8f4fc;
+  --ink:#222; --gray:#767676; --line:#e5e8eb; --bg:#f7f9fb;
+  --ok:#2e7d32; --ok-bg:#e8f5e9; --warn:#c77700; --warn-bg:#fff4e0; --bad:#d32f2f; --bad-bg:#fdecea;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;background:var(--bg);color:var(--ink);line-height:1.5;font-size:14px}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--sky-dark)}
+
+header{background:#12354e;color:#fff;position:sticky;top:0;z-index:20}
+.head-inner{max-width:760px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+header h1{font-size:16px;font-weight:800;letter-spacing:-.3px}
+header small{font-size:11px;opacity:.7;display:block}
+.tabs{max-width:760px;margin:0 auto;display:flex;gap:2px;padding:0 10px;overflow-x:auto}
+.tab{flex:0 0 auto;border:0;background:none;color:#cfe3f2;padding:9px 12px;font-weight:700;font-size:13.5px;border-bottom:3px solid transparent;cursor:pointer}
+.tab.on{color:#fff;border-color:#5db6ee}
+
+main{max-width:760px;margin:0 auto;padding:14px 16px 80px}
+.view{display:none}.view.on{display:block}
+h2{font-size:17px;margin:4px 0 10px;letter-spacing:-.3px}
+h3{font-size:14.5px;margin:18px 0 8px}
+.hint{font-size:12px;color:var(--gray);margin:4px 0 10px}
+
+.alert{border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:13px}
+.alert.bad{background:var(--bad-bg);color:#8a1c1c}
+.alert.warn{background:var(--warn-bg);color:#7a4a00}
+.alert.ok{background:var(--ok-bg);color:#1b5e20}
+.alert b{display:block;margin-bottom:2px}
+
+.bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.chip{border:1px solid var(--line);background:#fff;color:#444;font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:99px;cursor:pointer}
+.chip.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.btn{border:0;border-radius:8px;padding:9px 14px;font-weight:700;cursor:pointer;background:#eef1f4;color:#333;font-size:13px}
+.btn.pri{background:var(--sky);color:#fff}
+.btn.bad{background:var(--bad);color:#fff}
+.btn.sm{padding:5px 10px;font-size:12px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.grow{flex:1}
+
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.row{display:flex;gap:8px;align-items:center;justify-content:space-between}
+.lst-title{font-weight:700;font-size:14.5px}
+.lst-sub{font-size:12.5px;color:#555;margin-top:2px}
+.badge{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;white-space:nowrap}
+.st-접수{background:#eef1f4;color:#555}.st-광고중{background:var(--sky-light);color:var(--sky-dark)}
+.st-계약{background:var(--warn-bg);color:var(--warn)}.st-완료{background:#e0e0e0;color:#666}
+.b-ok{background:var(--ok-bg);color:var(--ok)}.b-bad{background:var(--bad-bg);color:var(--bad)}.b-warn{background:var(--warn-bg);color:var(--warn)}
+
+.form{display:grid;grid-template-columns:1fr 1fr;gap:10px 10px}
+.form .full{grid-column:1/-1}
+.f label{display:block;font-size:12px;color:var(--gray);margin-bottom:3px;font-weight:600}
+.f label .req{color:var(--bad)}
+.f input,.f select,.f textarea{width:100%;border:1px solid #d5dae0;border-radius:8px;padding:8px 10px;background:#fff}
+.f textarea{min-height:70px;resize:vertical}
+.f input.miss,.f select.miss{border-color:var(--bad);background:#fffafa}
+.f .sub{font-size:11px;color:#999;margin-top:2px}
+@media(max-width:520px){.form{grid-template-columns:1fr}}
+
+.copy-list{display:flex;flex-direction:column;gap:6px}
+.copy-item{display:flex;gap:8px;align-items:flex-start;background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.copy-item .k{flex:0 0 92px;font-size:12px;color:var(--gray);font-weight:600;padding-top:2px}
+.copy-item .v{flex:1;white-space:pre-wrap;word-break:break-all;font-size:13px}
+.copy-item .v.na{color:var(--bad)}
+
+.ver{background:#fff;border:1px solid var(--line);border-radius:12px;margin-bottom:10px;overflow:hidden}
+.ver-h{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#f2f4f6;font-weight:700;font-size:13px}
+.ver-t{padding:10px 12px 0;font-weight:700}
+.ver-b{padding:6px 12px 10px;white-space:pre-wrap;font-size:13.5px}
+.ver-f{padding:0 12px 10px;font-size:11.5px}
+.ver-f span{margin-right:8px}
+
+.check{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:13.5px}
+.check input{width:18px;height:18px}
+
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#222;color:#fff;padding:9px 16px;border-radius:99px;font-size:13px;opacity:0;transition:.2s;pointer-events:none;z-index:99}
+.toast.show{opacity:1}
+.empty{text-align:center;color:var(--gray);padding:40px 0}
+table.res{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px}
+table.res td,table.res th{border:1px solid var(--line);padding:6px;text-align:left}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="head-inner">
+    <div><h1>하늘공인중개사 광고 관리</h1><small>매물 원장 · 법정 명시사항 · 광고 문구</small></div>
+    <button class="btn sm" id="newBtn">＋ 매물 등록</button>
+  </div>
+  <nav class="tabs" id="tabs">
+    <button class="tab on" data-v="list">매물 원장</button>
+    <button class="tab" data-v="edit">매물 편집</button>
+    <button class="tab" data-v="ad">광고 만들기</button>
+    <button class="tab" data-v="cx">단지 관리</button>
+    <button class="tab" data-v="set">설정·백업</button>
+  </nav>
+</header>
+
+<main>
+  <!-- 매물 원장 -->
+  <section class="view on" id="v-list">
+    <div id="alerts"></div>
+    <div class="bar" id="stChips"></div>
+    <div id="lst"></div>
+  </section>
+
+  <!-- 매물 편집 -->
+  <section class="view" id="v-edit">
+    <h2 id="editTitle">매물 등록</h2>
+    <p class="hint"><span style="color:var(--bad)">*</span> 표시는 인터넷 광고 법정 명시사항입니다(공인중개사법 시행령 제17조의2). 비어 있으면 광고 준비 완료가 되지 않습니다.</p>
+    <form id="fm" class="form" autocomplete="off"></form>
+    <div class="bar" style="margin-top:14px">
+      <button class="btn pri" id="saveBtn">저장</button>
+      <button class="btn" id="saveAdBtn">저장 후 광고 만들기</button>
+      <span class="grow"></span>
+      <button class="btn bad sm" id="delBtn">삭제</button>
+    </div>
+  </section>
+
+  <!-- 광고 만들기 -->
+  <section class="view" id="v-ad">
+    <div id="adBody"><div class="empty">매물 원장에서 매물을 선택하세요.</div></div>
+  </section>
+
+  <!-- 단지 관리 -->
+  <section class="view" id="v-cx">
+    <h2>단지(건물) 관리</h2>
+    <p class="hint">사용승인일·주차대수·총 층수처럼 단지 공통 정보는 여기서 한 번만 입력하면 해당 단지 매물 전체에 적용됩니다.</p>
+    <div id="cxList"></div>
+    <h3 id="cxFormTitle">단지 추가</h3>
+    <form id="cxFm" class="form" autocomplete="off"></form>
+    <div class="bar" style="margin-top:10px">
+      <button class="btn" id="bldBtn">건축물대장에서 불러오기</button>
+      <button class="btn pri" id="cxSave">단지 저장</button>
+      <button class="btn sm" id="cxReset">새로 입력</button>
+    </div>
+    <div id="bldResult"></div>
+  </section>
+
+  <!-- 설정 -->
+  <section class="view" id="v-set">
+    <h2>설정</h2>
+    <form id="setFm" class="form" autocomplete="off"></form>
+    <div class="bar" style="margin-top:10px"><button class="btn pri" id="setSave">설정 저장</button></div>
+    <p class="hint">API 키는 이 기기의 브라우저에만 저장되고, 이 저장소나 다른 곳으로 올라가지 않습니다. 공용 PC에서는 입력하지 마세요.</p>
+
+    <h3>데이터 백업 · 불러오기</h3>
+    <p class="hint">매물 원장은 이 기기 브라우저에 저장됩니다. 브라우저 데이터를 지우면 사라지므로 주기적으로 백업하세요.</p>
+    <div class="bar">
+      <button class="btn" id="expBtn">백업 파일 저장</button>
+      <label class="btn">백업 불러오기<input type="file" id="impFile" accept=".json" hidden></label>
+      <button class="btn" id="seedBtn">네이버 광고 매물 가져오기</button>
+      <button class="btn" id="adInfoBtn">홈페이지용 ad_info.json 만들기</button>
+    </div>
+    <p class="hint">'네이버 광고 매물 가져오기'는 홈페이지가 자동 수집한 listings.json에서 원장에 없는 매물을 추가합니다. 'ad_info.json'은 저장소에 올리면 홈페이지 매물 상세의 법정 명시사항이 채워집니다.</p>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===== 상수 ===== */
+const LS_DATA = "haneul_ad_ledger_v1", LS_SET = "haneul_ad_settings_v1";
+const OFFICE = {
+  name:"하늘공인중개사", owner:"김용희", regNo:"가3628-2298", tel:"031-366-9919",
+  addr:"경기도 화성시 남양읍 시청로102번길 51 시티프라디움1차 아파트 상가2동 118호"
+};
+const STATUSES = ["접수","광고중","계약","완료"];
+const TRADES = ["매매","전세","월세","단기임대"];
+const TYPES = ["아파트","오피스텔","빌라","단독/다가구","원룸","상가","사무실","토지","공장/창고","기타"];
+const DIRS = ["","남향","남동향","남서향","동향","서향","북향","북동향","북서향"];
+const ANGLES = ["입지","조망","인테리어","특화공간","균형"];
+// 부당광고로 오해받기 쉬운 표현(경고용, 사용 금지는 아님)
+const RISKY = ["최저가","최저 가격","시세보다 저렴","무조건","100%","확정 수익","수익 보장","보장","특가","파격","급급매","초급매","로또","마지막 기회"];
+const DEFAULT_SET = { apiKey:"", model:"claude-opus-5", dataKey:"", proxy:"", shortMax:40, lineMin:15, lineMax:25 };
+
+/* ===== 저장소 ===== */
+function load(key, def){ try{ const v = localStorage.getItem(key); return v ? JSON.parse(v) : def; }catch(e){ return def; } }
+function save(key, v){ try{ localStorage.setItem(key, JSON.stringify(v)); return true; }catch(e){ toast("저장 실패: 브라우저 저장공간을 확인하세요"); return false; } }
+let DB = load(LS_DATA, { complexes:[], listings:[] });
+let SET = Object.assign({}, DEFAULT_SET, load(LS_SET, {}));
+const persist = () => save(LS_DATA, DB);
+
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+const today = () => new Date(Date.now() + 9*3600e3).toISOString().slice(0,10);
+const $ = id => document.getElementById(id);
+function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove("show"),1800); }
+function copy(text){
+  (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject())
+    .then(()=>toast("복사했습니다"))
+    .catch(()=>{ const ta=document.createElement("textarea"); ta.value=text; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); toast("복사했습니다"); });
+}
+function download(name, obj){
+  const blob = new Blob([typeof obj === "string" ? obj : JSON.stringify(obj, null, 1)], {type:"application/json"});
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+}
+
+/* ===== 표시 형식 ===== */
+function won(v){ // 만원 단위 숫자 -> '4억 3,000'
+  const n = parseInt(String(v||"").replace(/[^\d]/g,""), 10);
+  if(!n) return "";
+  const eok = Math.floor(n/10000), man = n % 10000;
+  return eok ? (eok + "억" + (man ? " " + man.toLocaleString() : "")) : man.toLocaleString();
+}
+function priceText(l){
+  if(l.trade === "월세" || l.trade === "단기임대") return (won(l.deposit)||"0") + " / " + (won(l.rent)||"0");
+  return won(l.price);
+}
+function pyeong(m2){ const n = parseFloat(m2); return n ? Math.round(n/3.3058) : ""; }
+function areaText(m2){ const n = parseFloat(m2); return n ? n + "㎡(" + pyeong(n) + "평)" : ""; }
+function dateText(d){ const s = String(d||"").replace(/[^\d]/g,""); return s.length===8 ? `${s.slice(0,4)}.${s.slice(4,6)}.${s.slice(6)}` : (d||""); }
+const cxOf = l => DB.complexes.find(c => c.id === l.complexId) || {};
+
+/* ===== 법정 명시사항 검사 ===== */
+function legalFields(l){
+  const c = cxOf(l);
+  const isRent = l.trade === "월세" || l.trade === "단기임대";
+  const parking = c.parkingTotal || c.parkingPerHh
+    ? [c.parkingTotal ? "총 " + c.parkingTotal + "대" : "", c.parkingPerHh ? "세대당 " + c.parkingPerHh + "대" : ""].filter(Boolean).join(" / ")
+    : (l.parking || "");
+  const noRooms = ["토지","상가","사무실","공장/창고"].includes(l.type);
+  return [
+    ["소재지", l.address || c.address],
+    ["중개대상물 종류", l.type],
+    ["거래형태", l.trade],
+    ["가격", isRent ? (l.deposit !== "" && l.rent ? priceText(l) : "") : won(l.price)],
+    ["전용면적", areaText(l.area2)],
+    ["해당층/총층", l.floor && (l.totalFloor || c.topFloor) ? `${l.floor}층 / ${l.totalFloor || c.topFloor}층` : ""],
+    ["사용승인일", dateText(l.approvalDate || c.approvalDate)],
+    ["방향", l.direction ? l.direction + (l.dirBase ? `(${l.dirBase} 기준)` : "") : ""],
+    ["방 수", noRooms ? "해당없음" : (l.rooms ? l.rooms + "개" : "")],
+    ["욕실 수", noRooms ? "해당없음" : (l.baths ? l.baths + "개" : "")],
+    ["입주가능일", l.moveIn],
+    ["주차대수", parking],
+    ["관리비", l.mgmtFee ? l.mgmtFee + (l.mgmtNote ? ` (${l.mgmtNote})` : "") : ""]
+  ];
+}
+const missing = l => legalFields(l).filter(f => !f[1]).map(f => f[0]);
+function riskyWords(text){ return RISKY.filter(w => String(text||"").includes(w)); }
+
+/* ===== 탭 ===== */
+let curId = null, stFilter = "진행중";
+function go(v){
+  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("on", t.dataset.v === v));
+  document.querySelectorAll(".view").forEach(s => s.classList.toggle("on", s.id === "v-" + v));
+  if(v === "list") renderList();
+  if(v === "ad") renderAd();
+  if(v === "cx") renderCx();
+  if(v === "set") renderSet();
+  window.scrollTo(0,0);
+}
+$("tabs").onclick = e => { const t = e.target.closest(".tab"); if(t) go(t.dataset.v); };
+$("newBtn").onclick = () => { curId = null; renderEdit(); go("edit"); };
+
+/* ===== 매물 원장 ===== */
+function renderList(){
+  // 경고: 완료인데 광고 미삭제 / 명시사항 누락 광고중
+  const takedown = DB.listings.filter(l => l.status === "완료" && (!l.downNaver || !l.downZigbang));
+  const incompleteAds = DB.listings.filter(l => l.status === "광고중" && missing(l).length);
+  let al = "";
+  if(takedown.length) al += `<div class="alert bad"><b>광고 내림 필요 ${takedown.length}건</b>거래완료 매물 광고를 방치하면 부당광고로 과태료 대상입니다. 이실장·직방에서 내린 뒤 체크하세요.</div>`;
+  if(incompleteAds.length) al += `<div class="alert warn"><b>명시사항 누락 광고 ${incompleteAds.length}건</b>광고중인 매물 중 법정 명시사항이 빠진 매물이 있습니다.</div>`;
+  if(!DB.listings.length) al += `<div class="alert ok"><b>시작하기</b>상단 '＋ 매물 등록'을 누르거나, 설정·백업 탭에서 '네이버 광고 매물 가져오기'로 기존 광고를 불러오세요.</div>`;
+  $("alerts").innerHTML = al;
+
+  const filters = ["진행중","전체",...STATUSES,"누락있음"];
+  $("stChips").innerHTML = filters.map(f => `<button class="chip ${f===stFilter?"on":""}" data-f="${f}">${f}</button>`).join("");
+  $("stChips").onclick = e => { const b = e.target.closest(".chip"); if(b){ stFilter = b.dataset.f; renderList(); } };
+
+  const items = DB.listings.filter(l =>
+    stFilter === "전체" ? true :
+    stFilter === "진행중" ? l.status !== "완료" || !l.downNaver || !l.downZigbang :
+    stFilter === "누락있음" ? missing(l).length > 0 :
+    l.status === stFilter
+  ).sort((a,b) => (b.updatedAt||"").localeCompare(a.updatedAt||""));
+
+  $("lst").innerHTML = items.length ? items.map(l => {
+    const m = missing(l), c = cxOf(l);
+    const legal = m.length ? `<span class="badge b-bad">누락 ${m.length}</span>` : `<span class="badge b-ok">명시사항 완료</span>`;
+    const down = l.status === "완료" && (!l.downNaver || !l.downZigbang) ? `<span class="badge b-bad">광고 내림 필요</span>` : "";
+    return `<div class="card" data-id="${l.id}">
+      <div class="row"><div class="lst-title">${esc(l.trade)} ${esc(priceText(l))}</div>
+        <span class="badge st-${esc(l.status)}">${esc(l.status)}</span></div>
+      <div class="lst-sub">${esc(l.type)} · ${esc(c.name || l.address || "")} ${esc(l.dong ? l.dong + "동" : "")} · ${esc(areaText(l.area2))} · ${esc(l.floor ? l.floor + "층" : "")}</div>
+      <div class="bar" style="margin:8px 0 0">${legal} ${down}
+        ${l.naverNo ? `<span class="badge st-접수">네이버 ${esc(l.naverNo)}</span>` : ""}
+        <span class="grow"></span>
+        <button class="btn sm" data-act="edit">편집</button>
+        <button class="btn sm pri" data-act="ad">광고</button>
+      </div></div>`;
+  }).join("") : `<div class="empty">해당하는 매물이 없습니다.</div>`;
+  $("lst").onclick = e => {
+    const b = e.target.closest("button[data-act]"); if(!b) return;
+    curId = b.closest(".card").dataset.id;
+    if(b.dataset.act === "edit"){ renderEdit(); go("edit"); } else go("ad");
+  };
+}
+
+/* ===== 매물 편집 ===== */
+const F = (name, label, type, opt={}) => ({name, label, type, ...opt});
+const EDIT_FIELDS = [
+  F("status","진행 상태","select",{options:STATUSES}),
+  F("complexId","단지(건물)","select",{options:()=>[["","(단지 선택 안 함)"],...DB.complexes.map(c=>[c.id,c.name])]}),
+  F("address","소재지","text",{req:true, full:true, ph:"단지 선택 시 비워도 됨 · 예) 화성시 남양읍 OO리 123", sub:"단지를 선택하면 단지 소재지를 씁니다."}),
+  F("dong","동","text",{ph:"111"}),
+  F("ho","호수 (내부용)","text",{ph:"광고에 노출되지 않음"}),
+  F("type","매물 종류","select",{options:TYPES, req:true}),
+  F("trade","거래형태","select",{options:TRADES, req:true}),
+  F("price","매매가/전세가 (만원)","number",{req:true, ph:"43000", sub:"매매·전세일 때"}),
+  F("deposit","보증금 (만원)","number",{ph:"3000", sub:"월세일 때"}),
+  F("rent","월세 (만원)","number",{ph:"150", sub:"월세일 때"}),
+  F("area1","공급면적 (㎡)","number",{ph:"112"}),
+  F("area2","전용면적 (㎡)","number",{req:true, ph:"84"}),
+  F("floor","해당 층","text",{req:true, ph:"5 또는 저/중/고"}),
+  F("totalFloor","총 층수","number",{req:true, ph:"단지 입력 시 생략", sub:"비우면 단지 정보를 씁니다."}),
+  F("approvalDate","사용승인일","text",{req:true, ph:"단지 입력 시 생략 · 20150630", sub:"비우면 단지 정보를 씁니다."}),
+  F("direction","방향","select",{options:DIRS, req:true}),
+  F("dirBase","방향 기준","select",{options:["거실","안방","주된 출입구"]}),
+  F("rooms","방 수","number",{req:true}),
+  F("baths","욕실 수","number",{req:true}),
+  F("moveIn","입주가능일","text",{req:true, ph:"즉시입주 / 2026.12.20 / 협의"}),
+  F("parking","주차대수","text",{req:true, ph:"단지 입력 시 생략 · 세대당 1대", sub:"비우면 단지 정보를 씁니다."}),
+  F("mgmtFee","관리비 (월)","text",{req:true, ph:"약 25만원 / 정액 10만원"}),
+  F("mgmtNote","관리비 포함·별도 항목","text",{ph:"수도·인터넷 포함, 전기·가스 별도"}),
+  F("features","매물 특징 (자유 메모)","textarea",{full:true, ph:"탑층 복층 테라스, 전망 최고, 올수리 2024년, 초등학교 도보 5분 …", sub:"광고 문구 생성의 재료가 됩니다. 사실만 적어 주세요."}),
+  F("naverNo","네이버 매물번호","text",{}),
+  F("zigbangNo","직방 매물번호","text",{}),
+  F("owner","의뢰인 (내부용)","text",{ph:"성함"}),
+  F("ownerTel","의뢰인 연락처 (내부용)","tel",{}),
+  F("memo","내부 메모","textarea",{full:true})
+];
+function fieldHtml(f, v){
+  const cls = `f${f.full ? " full" : ""}`;
+  const lab = `<label for="f_${f.name}">${esc(f.label)}${f.req ? ' <span class="req">*</span>' : ""}</label>`;
+  const sub = f.sub ? `<div class="sub">${esc(f.sub)}</div>` : "";
+  let inp;
+  if(f.type === "select"){
+    const opts = (typeof f.options === "function" ? f.options() : f.options).map(o => Array.isArray(o) ? o : [o,o]);
+    inp = `<select id="f_${f.name}" name="${f.name}">${opts.map(([k,t]) => `<option value="${esc(k)}" ${String(v??"")===String(k)?"selected":""}>${esc(t||"선택")}</option>`).join("")}</select>`;
+  } else if(f.type === "textarea"){
+    inp = `<textarea id="f_${f.name}" name="${f.name}" placeholder="${esc(f.ph||"")}">${esc(v)}</textarea>`;
+  } else {
+    inp = `<input id="f_${f.name}" name="${f.name}" type="${f.type==="number"?"text":f.type}" ${f.type==="number"?'inputmode="decimal"':""} value="${esc(v)}" placeholder="${esc(f.ph||"")}">`;
+  }
+  return `<div class="${cls}">${lab}${inp}${sub}</div>`;
+}
+function readForm(form){ const o = {}; new FormData(form).forEach((v,k) => o[k] = String(v).trim()); return o; }
+function renderEdit(){
+  const l = DB.listings.find(x => x.id === curId) || { status:"접수", type:"아파트", trade:"매매", dirBase:"거실" };
+  $("editTitle").textContent = curId ? "매물 편집" : "매물 등록";
+  $("delBtn").style.display = curId ? "" : "none";
+  $("fm").innerHTML = EDIT_FIELDS.map(f => fieldHtml(f, l[f.name])).join("");
+  markMissing();
+  $("fm").oninput = markMissing;
+}
+function markMissing(){
+  const draft = Object.assign({}, DB.listings.find(x => x.id === curId) || {}, readForm($("fm")));
+  const m = new Set(missing(draft));
+  const map = { "소재지":"address","가격":draft.trade==="월세"||draft.trade==="단기임대"?"rent":"price","전용면적":"area2","해당층/총층":draft.floor?"totalFloor":"floor",
+    "사용승인일":"approvalDate","방향":"direction","방 수":"rooms","욕실 수":"baths","입주가능일":"moveIn","주차대수":"parking","관리비":"mgmtFee" };
+  $("fm").querySelectorAll("input,select").forEach(el => el.classList.remove("miss"));
+  m.forEach(k => { const el = $("f_" + map[k]); if(el) el.classList.add("miss"); });
+}
+function saveListing(){
+  const data = readForm($("fm"));
+  const now = new Date().toISOString();
+  let l = DB.listings.find(x => x.id === curId);
+  if(!l){ l = { id: uid(), createdAt: now, adCopies: null }; DB.listings.push(l); curId = l.id; }
+  const prevStatus = l.status;
+  Object.assign(l, data, { updatedAt: now });
+  if(l.status === "완료" && prevStatus !== "완료"){ l.doneAt = today(); l.downNaver = false; l.downZigbang = false; }
+  if(persist()) toast("저장했습니다");
+  return l;
+}
+$("saveBtn").onclick = e => { e.preventDefault(); saveListing(); go("list"); };
+$("saveAdBtn").onclick = e => { e.preventDefault(); saveListing(); go("ad"); };
+$("delBtn").onclick = e => {
+  e.preventDefault();
+  if(!confirm("이 매물을 원장에서 삭제할까요? 되돌릴 수 없습니다.")) return;
+  DB.listings = DB.listings.filter(x => x.id !== curId); curId = null; persist(); go("list");
+};
+
+/* ===== 광고 만들기 ===== */
+function renderAd(){
+  const l = DB.listings.find(x => x.id === curId);
+  if(!l){ $("adBody").innerHTML = `<div class="empty">매물 원장에서 매물의 '광고' 버튼을 누르세요.</div>`; return; }
+  const c = cxOf(l), m = missing(l);
+  const legal = legalFields(l);
+  const takedown = l.status === "완료" ? `
+    <div class="card"><h3 style="margin-top:0">광고 내림 체크 (거래완료 ${esc(l.doneAt||"")})</h3>
+      <label class="check"><input type="checkbox" data-k="downNaver" ${l.downNaver?"checked":""}> 이실장(네이버)에서 광고 내림</label>
+      <label class="check"><input type="checkbox" data-k="downZigbang" ${l.downZigbang?"checked":""}> 직방에서 광고 내림</label>
+      <label class="check"><input type="checkbox" data-k="downSite" ${l.downSite?"checked":""}> 블로그·기타 채널 정리</label>
+    </div>` : "";
+  const statusBar = `<div class="bar">${STATUSES.map(s => `<button class="chip ${s===l.status?"on":""}" data-st="${s}">${s}</button>`).join("")}</div>`;
+
+  const copies = l.adCopies && l.adCopies.versions ? l.adCopies.versions.map((v,i) => verHtml(v,i)).join("") : "";
+  $("adBody").innerHTML = `
+    <h2>${esc(l.trade)} ${esc(priceText(l))} · ${esc(c.name || l.address || l.type)} ${esc(l.dong?l.dong+"동":"")}</h2>
+    ${statusBar}
+    ${takedown}
+    ${m.length ? `<div class="alert bad"><b>법정 명시사항 누락: ${m.join(", ")}</b>채운 뒤 광고를 올려 주세요. <a href="#" id="toEdit">편집하러 가기</a></div>`
+               : `<div class="alert ok"><b>법정 명시사항 모두 입력됨</b>아래 항목을 이실장·직방 등록 화면에 그대로 옮기세요.</div>`}
+
+    <h3>등록용 항목 (탭하면 복사)</h3>
+    <div class="copy-list">${legal.map(([k,v]) => `<div class="copy-item" data-copy="${esc(v)}"><div class="k">${esc(k)}</div><div class="v ${v?"":"na"}">${esc(v || "미입력")}</div></div>`).join("")}
+      ${l.area1 ? `<div class="copy-item" data-copy="${esc(areaText(l.area1))}"><div class="k">공급면적</div><div class="v">${esc(areaText(l.area1))}</div></div>` : ""}
+    </div>
+
+    <h3>중개사무소 표시 (광고마다 필수)</h3>
+    <div class="copy-item" data-copy="${esc(officeBlock())}"><div class="k">사무소 정보</div><div class="v">${esc(officeBlock())}</div></div>
+
+    <h3>광고 문구 5버전</h3>
+    <p class="hint">AI 생성은 설정 탭에 Claude API 키가 있어야 합니다. 키가 없으면 '기본 템플릿'으로 만들 수 있습니다. 문구는 반드시 읽어 보고 사실과 다른 내용이 없는지 확인한 뒤 쓰세요.</p>
+    <div class="bar">
+      <button class="btn pri" id="genAi" ${SET.apiKey?"":"disabled"}>AI로 5버전 생성</button>
+      <button class="btn" id="genTpl">기본 템플릿으로 생성</button>
+      <span class="hint" id="genState" style="margin:0"></span>
+    </div>
+    <div id="vers">${copies}</div>`;
+
+  $("adBody").onclick = e => {
+    const st = e.target.closest("[data-st]");
+    if(st){ curId = l.id; l.status = st.dataset.st; if(l.status==="완료" && !l.doneAt){ l.doneAt = today(); } l.updatedAt = new Date().toISOString(); persist(); renderAd(); return; }
+    if(e.target.id === "toEdit"){ e.preventDefault(); renderEdit(); go("edit"); return; }
+    const ci = e.target.closest("[data-copy]"); if(ci && ci.dataset.copy) copy(ci.dataset.copy);
+    const cv = e.target.closest("[data-cv]");
+    if(cv){ const v = l.adCopies.versions[+cv.dataset.cv]; copy(cv.dataset.part === "title" ? v.title : v.body); }
+  };
+  $("adBody").onchange = e => {
+    const k = e.target.dataset.k; if(!k) return;
+    l[k] = e.target.checked; l.updatedAt = new Date().toISOString(); persist();
+    toast(e.target.checked ? "체크했습니다" : "체크 해제");
+  };
+  $("genTpl").onclick = () => { l.adCopies = { by:"template", at:new Date().toISOString(), versions: templateCopies(l) }; persist(); renderAd(); };
+  $("genAi").onclick = () => genAi(l);
+}
+function officeBlock(){ return `${OFFICE.name} (대표 ${OFFICE.owner})\n등록번호 ${OFFICE.regNo}\n${OFFICE.addr}\n☎ ${OFFICE.tel}`; }
+function verHtml(v, i){
+  const lines = String(v.body||"").split("\n").filter(s => s.trim());
+  const long = lines.filter(s => s.length > SET.lineMax).length;
+  const risky = riskyWords(v.title + " " + v.body);
+  const tLen = (v.title||"").length;
+  return `<div class="ver">
+    <div class="ver-h"><span>${i+1}. ${esc(v.angle)} 강조</span>
+      <span><button class="btn sm" data-cv="${i}" data-part="title">제목 복사</button> <button class="btn sm pri" data-cv="${i}" data-part="body">본문 복사</button></span></div>
+    <div class="ver-t">${esc(v.title)}</div>
+    <div class="ver-b">${esc(v.body)}</div>
+    <div class="ver-f">
+      <span class="badge ${tLen > SET.shortMax ? "b-bad" : "b-ok"}">제목 ${tLen}자 / ${SET.shortMax}자</span>
+      <span class="badge ${long ? "b-warn" : "b-ok"}">${long ? `${SET.lineMax}자 넘는 줄 ${long}개` : "줄 길이 적정"}</span>
+      ${risky.length ? `<span class="badge b-bad">주의 표현: ${esc(risky.join(", "))}</span>` : ""}
+    </div></div>`;
+}
+
+/* ===== 광고 문구: 기본 템플릿 ===== */
+function wrapLines(text){ // 줄당 lineMax자 이하로 어절 단위 줄바꿈
+  const out = [];
+  String(text).split("\n").forEach(p => {
+    let cur = "";
+    p.split(/\s+/).filter(Boolean).forEach(w => {
+      if((cur + " " + w).trim().length > SET.lineMax && cur){ out.push(cur); cur = w; }
+      else cur = (cur + " " + w).trim();
+    });
+    if(cur) out.push(cur);
+  });
+  return out.join("\n");
+}
+function templateCopies(l){
+  const c = cxOf(l), name = c.name || "";
+  const where = [name, l.dong ? l.dong + "동" : ""].filter(Boolean).join(" ");
+  const base = `${l.type} ${l.trade} ${priceText(l)}`;
+  const spec = [areaText(l.area2) && "전용 " + areaText(l.area2), l.floor && (l.totalFloor||c.topFloor) ? `${l.floor}/${l.totalFloor||c.topFloor}층` : "", l.direction].filter(Boolean).join(" · ");
+  const room = l.rooms ? `방${l.rooms} 욕실${l.baths||""}` : "";
+  const feat = String(l.features||"").split(/[,\n]/).map(s=>s.trim()).filter(Boolean);
+  const pick = (re) => feat.filter(f => re.test(f));
+  const rest = (arr) => feat.filter(f => !arr.includes(f));
+  // 기본 템플릿은 입력된 사실만 조합합니다(없는 장점을 만들어 넣지 않음).
+  const tail = `입주 ${l.moveIn || "협의"}\n남양읍 17년, 하늘공인중개사\n☎ ${OFFICE.tel}`;
+  const mk = (angle, title, lines) => ({ angle, title: title.slice(0, SET.shortMax), body: wrapLines(lines.filter(Boolean).join("\n")) });
+  const loc = pick(/역세권|전철|지하철|초등|중학|고등|학교|학원|마트|병원|공원|버스|IC|도보|상권|시청|터미널/);
+  const view = pick(/뷰|전망|조망|탁트|탁 트|남향|채광|고층|탑층|영구/);
+  const inter = pick(/수리|리모델|인테리어|새시|샷시|도배|장판|주방|욕실|확장|올수리/);
+  const special = pick(/테라스|복층|다락|정원|펜트|알파룸|드레스|팬트리|창고|마당/);
+  return [
+    mk("입지", `${where} ${loc[0] || areaText(l.area2)}`, [base, where, ...loc, spec, room, ...rest(loc).slice(0,2), tail]),
+    mk("조망", `${where} ${view[0] || [l.floor && l.floor + "층", l.direction].filter(Boolean).join(" ")}`, [base, ...view, spec, room, ...rest(view).slice(0,2), tail]),
+    mk("인테리어", `${where} ${inter[0] || feat[0] || room}`, [base, ...inter, spec, room, ...rest(inter).slice(0,2), tail]),
+    mk("특화공간", `${where} ${special[0] || room}`, [base, ...special, spec, room, ...rest(special).slice(0,2), tail]),
+    mk("균형", `${where} ${l.trade} ${priceText(l)}`, [base, where, spec, room, ...feat.slice(0,3), tail])
+  ];
+}
+
+/* ===== 광고 문구: Claude API ===== */
+const COPY_SCHEMA = {
+  type:"object",
+  properties:{ versions:{ type:"array", items:{ type:"object",
+    properties:{ angle:{type:"string", enum:ANGLES}, title:{type:"string"}, body:{type:"string"} },
+    required:["angle","title","body"], additionalProperties:false } } },
+  required:["versions"], additionalProperties:false
+};
+function copyPrompt(l){
+  const c = cxOf(l);
+  const facts = legalFields(l).filter(f => f[1]).map(f => `- ${f[0]}: ${f[1]}`).join("\n");
+  return {
+    system:
+`당신은 경기도 화성시 남양읍에서 17년째 영업 중인 하늘공인중개사(대표 ${OFFICE.owner})의 매물 광고 카피라이터입니다.
+사무소 강점: 남양읍 17년 전문, KB부동산·한국부동산원 시세 제공 협력 중개사무소.
+네이버부동산(이실장 등록)과 직방에 올릴 매물 광고 문구를 씁니다.
+
+규칙:
+- 5개 버전을 만들고 각각 강조점을 다르게 합니다: 입지, 조망, 인테리어, 특화공간, 균형.
+- title은 ${SET.shortMax}자 이내 한 줄. 목록에서 눈에 띄는 핵심 한 가지.
+- body는 모바일 가독성 기준으로 한 줄 ${SET.lineMin}~${SET.lineMax}자, 짧게 줄바꿈합니다. 8~12줄.
+- 주어진 사실만 씁니다. 없는 시설·거리·수치·학군·개발호재를 지어내지 않습니다. 정보가 부족한 강조점은 있는 사실 안에서 표현만 달리합니다.
+- '최저가', '시세보다 저렴', '수익 보장', '무조건', '100%' 같은 과장·단정 표현은 쓰지 않습니다(부당한 표시·광고 방지).
+- 호수는 쓰지 않습니다. 가격은 주어진 표기 그대로 씁니다.
+- 마지막 줄 근처에 사무소 강점 한 줄과 전화 ${OFFICE.tel}을 넣습니다.
+- 이모지는 쓰지 않습니다.`,
+    user:
+`매물 정보:
+${facts}
+- 단지/건물명: ${c.name || "(없음)"}${l.dong ? `\n- 동: ${l.dong}동` : ""}
+- 공급면적: ${areaText(l.area1) || "(없음)"}
+- 매물 특징(중개사 메모): ${l.features || "(없음)"}
+
+위 정보로 5가지 버전의 광고 문구를 만들어 주세요.`
+  };
+}
+let SDK = null;
+async function genAi(l){
+  const st = $("genState"), btn = $("genAi");
+  btn.disabled = true; st.textContent = "생성 중… (보통 20~60초)";
+  try{
+    if(!SDK) SDK = (await import("https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk/+esm")).default;
+    const client = new SDK({ apiKey: SET.apiKey, dangerouslyAllowBrowser: true });
+    const p = copyPrompt(l);
+    const req = {
+      model: SET.model || DEFAULT_SET.model,
+      max_tokens: 16000,
+      system: p.system,
+      messages: [{ role:"user", content: p.user }],
+      output_config: { format: { type:"json_schema", schema: COPY_SCHEMA } }
+    };
+    const res = await client.beta.messages.create({ ...req, betas:["server-side-fallback-2026-07-01"], fallbacks:"default" });
+    if(res.stop_reason === "refusal") throw new Error("모델이 요청을 거절했습니다. 매물 메모 내용을 확인해 주세요.");
+    if(res.stop_reason === "max_tokens") throw new Error("응답이 길어 잘렸습니다. 다시 시도해 주세요.");
+    const text = (res.content.find(b => b.type === "text") || {}).text || "";
+    const out = JSON.parse(text);
+    if(!out.versions || !out.versions.length) throw new Error("생성 결과가 비어 있습니다.");
+    l.adCopies = { by: res.model, at: new Date().toISOString(), versions: out.versions };
+    persist(); renderAd(); toast("광고 문구를 만들었습니다");
+  }catch(e){
+    let msg = e && e.message || String(e);
+    if(SDK && e instanceof SDK.AuthenticationError) msg = "API 키가 올바르지 않습니다. 설정 탭에서 확인하세요.";
+    else if(SDK && e instanceof SDK.RateLimitError) msg = "요청이 많아 잠시 제한됐습니다. 1분 뒤 다시 시도하세요.";
+    else if(SDK && e instanceof SDK.APIConnectionError) msg = "인터넷 연결을 확인하세요.";
+    else if(!SDK) msg = "AI 모듈을 불러오지 못했습니다(인터넷 연결 확인). " + msg;
+    st.textContent = "실패: " + msg; btn.disabled = false;
+  }
+}
+
+/* ===== 단지 관리 + 건축물대장 ===== */
+const CX_FIELDS = [
+  F("name","단지·건물명","text",{ph:"시티프라디움1차", req:true}),
+  F("address","소재지","text",{full:true, ph:"경기도 화성시 남양읍 시청로 OOO", req:true}),
+  F("approvalDate","사용승인일","text",{ph:"20150630", req:true}),
+  F("topFloor","최고 층수","number",{ph:"25"}),
+  F("households","세대수","number",{}),
+  F("parkingTotal","총 주차대수","number",{}),
+  F("parkingPerHh","세대당 주차대수","text",{ph:"1.2"}),
+  F("bjdongFull","법정동코드 (10자리)","text",{ph:"건축물대장 조회용", sub:"행정표준코드관리시스템(code.go.kr)에서 확인"}),
+  F("bun","본번","text",{ph:"2089"}),
+  F("ji","부번","text",{ph:"0"})
+];
+let cxCur = null;
+function renderCx(){
+  $("cxList").innerHTML = DB.complexes.length ? DB.complexes.map(c => {
+    const n = DB.listings.filter(l => l.complexId === c.id).length;
+    return `<div class="card" data-cx="${c.id}"><div class="row"><div>
+      <div class="lst-title">${esc(c.name)}</div>
+      <div class="lst-sub">사용승인 ${esc(dateText(c.approvalDate)||"미입력")} · 최고 ${esc(c.topFloor||"-")}층 · 주차 ${esc(c.parkingTotal||"-")}대(세대당 ${esc(c.parkingPerHh||"-")}) · 매물 ${n}건</div>
+      </div><button class="btn sm">편집</button></div></div>`;
+  }).join("") : `<div class="hint">등록된 단지가 없습니다.</div>`;
+  $("cxList").onclick = e => { const d = e.target.closest("[data-cx]"); if(d){ cxCur = d.dataset.cx; cxForm(); } };
+  cxForm();
+}
+function cxForm(){
+  const c = DB.complexes.find(x => x.id === cxCur) || {};
+  $("cxFormTitle").textContent = cxCur ? "단지 편집" : "단지 추가";
+  $("cxFm").innerHTML = CX_FIELDS.map(f => fieldHtml(f, c[f.name])).join("");
+  $("bldResult").innerHTML = "";
+}
+$("cxReset").onclick = e => { e.preventDefault(); cxCur = null; cxForm(); };
+$("cxSave").onclick = e => {
+  e.preventDefault();
+  const d = readForm($("cxFm"));
+  if(!d.name){ toast("단지명을 입력하세요"); return; }
+  let c = DB.complexes.find(x => x.id === cxCur);
+  if(!c){ c = { id: uid() }; DB.complexes.push(c); cxCur = c.id; }
+  Object.assign(c, d); persist(); toast("단지를 저장했습니다"); renderCx();
+};
+// 국토교통부 건축HUB 건축물대장정보 (공공데이터포털). 브라우저 직접 호출이 막히면 설정의 프록시 주소를 씁니다.
+async function bldCall(op, p){
+  const base = (SET.proxy || "https://apis.data.go.kr").replace(/\/$/,"");
+  const q = new URLSearchParams({ serviceKey: SET.dataKey, sigunguCd:p.sigunguCd, bjdongCd:p.bjdongCd, platGbCd:"0",
+    bun: p.bun.padStart(4,"0"), ji: (p.ji||"0").padStart(4,"0"), numOfRows:"100", pageNo:"1", _type:"json" });
+  const r = await fetch(`${base}/1613000/BldRgstHubService/${op}?${q}`);
+  const t = await r.text();
+  let j; try{ j = JSON.parse(t); }catch(e){ throw new Error("응답 해석 실패: " + t.slice(0,120)); }
+  const it = j?.response?.body?.items?.item;
+  return it ? (Array.isArray(it) ? it : [it]) : [];
+}
+$("bldBtn").onclick = async e => {
+  e.preventDefault();
+  const d = readForm($("cxFm")), out = $("bldResult");
+  const code = (d.bjdongFull||"").replace(/\D/g,"");
+  if(!SET.dataKey){ out.innerHTML = `<div class="alert warn">설정 탭에 공공데이터포털 인증키를 먼저 입력하세요.</div>`; return; }
+  if(code.length !== 10 || !d.bun){ out.innerHTML = `<div class="alert warn">법정동코드 10자리와 본번을 입력하세요.</div>`; return; }
+  out.innerHTML = `<div class="hint">건축물대장 조회 중…</div>`;
+  const p = { sigunguCd: code.slice(0,5), bjdongCd: code.slice(5), bun: d.bun, ji: d.ji };
+  try{
+    const [recap, titles] = await Promise.all([ bldCall("getBrRecapTitleInfo", p).catch(()=>[]), bldCall("getBrTitleInfo", p) ]);
+    if(!recap.length && !titles.length){ out.innerHTML = `<div class="alert warn">조회 결과가 없습니다. 법정동코드·번지를 확인하세요.</div>`; return; }
+    const num = v => parseInt(v,10) || 0;
+    const pk = t => num(t.indrAutoUtcnt) + num(t.oudrAutoUtcnt) + num(t.indrMechUtcnt) + num(t.oudrMechUtcnt);
+    const r0 = recap[0] || {};
+    const top = Math.max(0, ...titles.map(t => num(t.grndFlrCnt)));
+    const hh = num(r0.hhldCnt) || titles.reduce((s,t) => s + num(t.hhldCnt), 0);
+    const park = num(r0.totPkngCnt) || titles.reduce((s,t) => s + pk(t), 0);
+    const apr = r0.useAprDay || (titles.map(t => t.useAprDay).filter(Boolean).sort()[0] || "");
+    const sug = {
+      name: d.name || r0.bldNm || titles[0]?.bldNm || "",
+      address: d.address || r0.newPlatPlc || r0.platPlc || titles[0]?.newPlatPlc || titles[0]?.platPlc || "",
+      approvalDate: apr, topFloor: top || "", households: hh || "", parkingTotal: park || "",
+      parkingPerHh: park && hh ? (Math.round(park/hh*100)/100).toString() : ""
+    };
+    out.innerHTML = `<div class="alert ok"><b>조회 완료 · 동 ${titles.length}개</b>아래 값을 확인하고 '적용'을 누르세요. 사용승인일이 동마다 다르면 매물 편집에서 개별 입력하세요.</div>
+      <table class="res"><tr><th>동</th><th>사용승인일</th><th>지상층</th><th>세대</th><th>주차</th></tr>
+      ${titles.slice(0,40).map(t => `<tr><td>${esc(t.dongNm||t.bldNm||"")}</td><td>${esc(dateText(t.useAprDay))}</td><td>${esc(t.grndFlrCnt)}</td><td>${esc(t.hhldCnt)}</td><td>${pk(t)}</td></tr>`).join("")}</table>
+      <div class="bar" style="margin-top:8px"><button class="btn pri" id="bldApply">적용: 사용승인 ${esc(dateText(apr))} · 최고 ${top}층 · 주차 ${park}대(세대당 ${esc(sug.parkingPerHh||"-")})</button></div>`;
+    $("bldApply").onclick = ev => {
+      ev.preventDefault();
+      Object.entries(sug).forEach(([k,v]) => { const el = $("f_" + k); if(el && v !== "") el.value = v; });
+      toast("적용했습니다. '단지 저장'을 누르세요");
+    };
+  }catch(err){
+    out.innerHTML = `<div class="alert bad"><b>조회 실패</b>${esc(err.message||err)}<br>브라우저에서 공공데이터 API 직접 호출이 막힌 경우(CORS), 설정 탭에 프록시 주소를 넣어 주세요. 저장소의 tools/bld-proxy-worker.js 안내를 참고하세요.</div>`;
+  }
+};
+
+/* ===== 설정·백업 ===== */
+const SET_FIELDS = [
+  F("apiKey","Claude API 키","password",{full:true, ph:"sk-ant-…", sub:"광고 문구 AI 생성용 (console.anthropic.com에서 발급)"}),
+  F("model","문구 생성 모델","select",{options:[["claude-opus-5","Claude Opus 5 (기본·최고 품질)"],["claude-sonnet-5","Claude Sonnet 5 (저렴)"]]}),
+  F("dataKey","공공데이터포털 인증키 (Decoding)","password",{full:true, sub:"'국토교통부_건축HUB_건축물대장정보 서비스' 활용신청 후 발급"}),
+  F("proxy","건축물대장 프록시 주소 (선택)","text",{full:true, ph:"https://bld-proxy.OOO.workers.dev"}),
+  F("shortMax","제목 최대 글자 수","number",{sub:"등록 화면 제한에 맞게 조정"}),
+  F("lineMax","본문 한 줄 최대 글자 수","number",{})
+];
+function renderSet(){ $("setFm").innerHTML = SET_FIELDS.map(f => fieldHtml(f, SET[f.name])).join(""); }
+$("setSave").onclick = e => {
+  e.preventDefault();
+  const d = readForm($("setFm"));
+  d.shortMax = parseInt(d.shortMax,10) || DEFAULT_SET.shortMax;
+  d.lineMax = parseInt(d.lineMax,10) || DEFAULT_SET.lineMax;
+  SET = Object.assign({}, SET, d); save(LS_SET, SET); toast("설정을 저장했습니다");
+};
+$("expBtn").onclick = () => download(`하늘_광고원장_${today()}.json`, { app:"haneul-ad", version:1, exportedAt:new Date().toISOString(), ...DB });
+$("impFile").onchange = e => {
+  const f = e.target.files[0]; if(!f) return;
+  f.text().then(t => {
+    const j = JSON.parse(t);
+    if(!Array.isArray(j.listings) || !Array.isArray(j.complexes)) throw new Error("형식 오류");
+    if(!confirm(`매물 ${j.listings.length}건, 단지 ${j.complexes.length}건으로 현재 데이터를 바꿀까요?`)) return;
+    DB = { complexes:j.complexes, listings:j.listings }; persist(); toast("불러왔습니다"); go("list");
+  }).catch(err => toast("불러오기 실패: " + err.message)).finally(() => e.target.value = "");
+};
+$("seedBtn").onclick = async () => {
+  try{
+    const j = await (await fetch("../listings.json?t=" + Date.now())).json();
+    const have = new Set(DB.listings.map(l => l.naverNo).filter(Boolean));
+    const KO = {"한":1,"두":2,"세":3,"네":4,"다섯":5};
+    let added = 0;
+    (j.items||[]).forEach(it => {
+      if(have.has(String(it.id))) return;
+      // 제목 '시티프라디움1차 111동' -> 단지명/동
+      const m = String(it.title||"").match(/^(.*?)\s*(\d+)동$/);
+      const cxName = (m ? m[1] : it.title || "").trim();
+      let c = DB.complexes.find(x => x.name === cxName);
+      if(!c && cxName){ c = { id: uid(), name: cxName }; DB.complexes.push(c); }
+      const [fl, tot] = String(it.floor||"").split("/");
+      const tag = re => { for(const t of it.tags||[]){ const r = t.match(re); if(r) return r; } return null; };
+      const rm = tag(/^방(한|두|세|네|다섯)개/), bt = tag(/^화장실(한|두|세|네)개/), pk = tag(/^세대당\s*(.+)$/);
+      const toMan = s => { const x = String(s||"").replace(/,/g,"").match(/(?:(\d+)억)?\s*(\d+)?/); return x ? String((+(x[1]||0))*10000 + (+(x[2]||0))) : ""; };
+      const rent = it.trade === "월세" || it.trade === "단기임대";
+      const now = new Date().toISOString();
+      DB.listings.push({ id: uid(), createdAt: now, updatedAt: now, status:"광고중", complexId: c ? c.id : "",
+        dong: m ? m[2] : "", type: it.type, trade: it.trade,
+        price: rent ? "" : toMan(it.price), deposit: rent ? toMan(it.price) : "", rent: rent ? toMan(it.rentPrice) : "",
+        area1: it.area1, area2: it.area2, floor: fl || "", totalFloor: tot || "", direction: it.direction || "", dirBase:"거실",
+        rooms: rm ? String(KO[rm[1]]) : "", baths: bt ? String(KO[bt[1]]) : "", parking: pk ? "세대당 " + pk[1] : "",
+        features: [it.desc, ...(it.tags||[])].filter(Boolean).join(", "), naverNo: String(it.id), adCopies:null });
+      added++;
+    });
+    persist(); toast(`${added}건 추가했습니다`); go("list");
+  }catch(err){ toast("가져오기 실패: listings.json을 읽지 못했습니다"); }
+};
+$("adInfoBtn").onclick = () => {
+  const out = { _설명: "광고 관리 페이지(admin)에서 생성. 저장소 루트의 ad_info.json을 이 파일로 교체하세요.", complexes:{}, items:{} };
+  DB.complexes.forEach(c => { out.complexes[c.name] = { address: c.address||"", approvalDate: dateText(c.approvalDate),
+    parking: [c.parkingTotal ? "총 " + c.parkingTotal + "대" : "", c.parkingPerHh ? "세대당 " + c.parkingPerHh + "대" : ""].filter(Boolean).join(" / ") }; });
+  DB.listings.filter(l => l.naverNo && l.status !== "완료").forEach(l => {
+    const o = { moveIn: l.moveIn||"", mgmtFee: l.mgmtFee ? l.mgmtFee + (l.mgmtNote ? ` (${l.mgmtNote})` : "") : "",
+      rooms: l.rooms ? l.rooms + "개" : "", baths: l.baths ? l.baths + "개" : "", directionBase: l.dirBase||"" };
+    if(l.approvalDate) o.approvalDate = dateText(l.approvalDate);
+    if(l.address) o.address = l.address;
+    out.items[l.naverNo] = o;
+  });
+  download("ad_info.json", out);
+};
+
+go("list");
+</script>
+</body>
+</html>
