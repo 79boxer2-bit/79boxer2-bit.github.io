@@ -1,0 +1,6 @@
+config.json
+state.json
+kakao_token.json
+monitor.log
+debug/
+*.tmp

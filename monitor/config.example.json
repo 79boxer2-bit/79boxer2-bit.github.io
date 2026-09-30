@@ -1,0 +1,21 @@
+{
+ "my_office_names": ["하늘공인중개사"],
+ "hours": [10, 18],
+ "trade_types": ["매매", "전세", "월세"],
+ "max_pages": 10,
+ "max_alerts_per_day": 20,
+ "complexes": [
+  {"name": "시티프라디움1차", "url": ""},
+  {"name": "양우2차", "url": ""},
+  {"name": "리젠시빌란트", "url": ""},
+  {"name": "양우1차", "url": ""},
+  {"name": "대광2차", "url": ""},
+  {"name": "남양아이파트", "url": ""},
+  {"name": "동광뷰엘", "url": ""}
+ ],
+ "kakao": {
+  "rest_api_key": "",
+  "client_secret": "",
+  "redirect_uri": "https://localhost"
+ }
+}
