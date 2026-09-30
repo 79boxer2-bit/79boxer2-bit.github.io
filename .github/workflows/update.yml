@@ -1,8 +1,9 @@
 name: update-listings
 
+# 2026-09-30 사장님 요청으로 자동 실행 정지. 다시 켜려면 아래 두 줄의 # 을 지우세요.
 on:
-  schedule:
-    - cron: '30 22,3,7 * * *'
+  # schedule:
+  #   - cron: '30 22,3,7 * * *'
   workflow_dispatch:
 
 permissions:
