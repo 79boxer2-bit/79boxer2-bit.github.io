@@ -4,3 +4,4 @@ kakao_token.json
 monitor.log
 debug/
 *.tmp
+browser_profile/
