@@ -9,7 +9,7 @@
 
 사용법 (명령 프롬프트에서):
   python ad_monitor.py              감시 1회 실행 (예약 작업이 이걸 실행)
-  python ad_monitor.py test         첫 단지 하나만 읽어서 결과 확인 (알림 안 보냄)
+  python ad_monitor.py test         모든 단지를 읽어서 단지명·매물 수 확인 (알림 안 보냄)
   python ad_monitor.py kakao-login  카카오톡 연결 (처음 한 번)
   python ad_monitor.py kakao-test   카카오톡 테스트 메시지
   python ad_monitor.py summary      오늘 요약을 지금 바로 보내기
@@ -420,7 +420,7 @@ def check(cfg, state, dry=False, only_first=False):
     my_dates = state.setdefault("my_dates", {})
     new_alerts = 0
 
-    complexes = cfg["complexes"][:1] if only_first else cfg["complexes"]
+    complexes = cfg["complexes"]
     for c in complexes:
         no = complex_no(c.get("url") or c.get("no"))
         name = c.get("name", no)
@@ -434,9 +434,10 @@ def check(cfg, state, dry=False, only_first=False):
             continue
         arts = [norm(a, name, i + 1) for i, a in enumerate(raw)]
         mine = [a for a in arts if is_mine(a, names)]
-        log(f"[{name}] 매물 {len(arts)}건, 우리 매물 {len(mine)}건")
+        naver_name = next((str(a.get("atclNm") or "") for a in raw if a.get("atclNm")), "")
+        log(f"[{name}] 네이버 단지명: {naver_name or '확인 불가'} · 매물 {len(arts)}건, 우리 매물 {len(mine)}건")
         if only_first:
-            for a in arts[:15]:
+            for a in arts[:5]:
                 log(f"   {a['rank']:>3}위 {a['trade']} {a['dong']}동 {a['flr_text']} {a['area']}㎡ {a['price']} {a['date']} {a['realtor']}")
 
         for me in mine:
@@ -512,7 +513,7 @@ def main():
 
     state = load_json(STATE_PATH, {})
     if cmd == "test":
-        log("=== 테스트: 첫 단지만 읽습니다 (알림 안 보냄, debug 폴더에 원본 저장) ===")
+        log("=== 테스트: 모든 단지를 읽습니다 (알림 안 보냄, debug 폴더에 원본 저장) ===")
         check(cfg, state, dry=True, only_first=True)
         return
     if cmd == "summary":
