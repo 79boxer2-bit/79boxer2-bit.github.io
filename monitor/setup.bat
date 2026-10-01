@@ -51,7 +51,8 @@ if not exist "%DEST%" mkdir "%DEST%"
 rem 설정·기록 파일은 덮어쓰지 않고 프로그램 파일만 갱신
 for /d %%R in ("%TMPDIR%\*") do (
   copy /Y "%%R\monitor\*.py" "%DEST%\" >nul
-  copy /Y "%%R\monitor\*.bat" "%DEST%\" >nul
+  for %%F in ("%%R\monitor\*.bat") do if /i not "%%~nxF"=="setup.bat" copy /Y "%%F" "%DEST%\" >nul
+  copy /Y "%%R\monitor\setup.bat" "%DEST%\setup.new" >nul
   copy /Y "%%R\monitor\*.example.*" "%DEST%\" >nul
   copy /Y "%%R\monitor\README.md" "%DEST%\" >nul
 )
@@ -107,3 +108,5 @@ echo.
 echo 남은 일: 휴대폰 알림 연결 - %DEST%\phone_setup.bat 실행. 연결 전까지 결과는 %DEST%\monitor.log 에만 기록됩니다.
 echo.
 pause
+rem 실행 중에 자기 자신을 덮어쓰지 않도록, 마지막 줄 하나로 새 설치 파일로 교체하고 끝낸다
+if exist "%DEST%\setup.new" copy /Y "%DEST%\setup.new" "%DEST%\setup.bat" >nul & del "%DEST%\setup.new" & exit /b 0
