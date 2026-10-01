@@ -105,7 +105,7 @@ if errorlevel 1 (
   echo 자동 실행 등록 완료: PC가 켜져 있으면 30분마다, 오전 10시~저녁 6시에만 감시합니다.
 )
 echo.
-echo 남은 일: 휴대폰 알림 연결 - %DEST%\phone_setup.bat 실행. 연결 전까지 결과는 %DEST%\monitor.log 에만 기록됩니다.
+echo 카카오톡 연결이 아직이면 %DEST%\kakao_setup.bat 을 실행하세요. 지금 바로 점검하려면 %DEST%\check_now.bat 을 실행하세요.
 echo.
 pause
 rem 실행 중에 자기 자신을 덮어쓰지 않도록, 마지막 줄 하나로 새 설치 파일로 교체하고 끝낸다
