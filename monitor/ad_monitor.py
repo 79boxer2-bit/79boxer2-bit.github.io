@@ -753,14 +753,62 @@ def send_kakao(cfg, text, link=""):
         kakao_post("https://kapi.kakao.com/v2/api/talk/memo/default/send", {"template_object": json.dumps(tpl, ensure_ascii=False)}, token)
 
 
+def send_ntfy(cfg, text, link=""):
+    """휴대폰 ntfy 앱으로 알림 (가입·키 없이 주제 이름만 맞추면 됨)."""
+    title, _, body = text.partition("\n")
+    payload = {"topic": cfg["ntfy_topic"], "title": title, "message": body or title, "tags": ["house"]}
+    if link:
+        payload["click"] = link
+    req = urllib.request.Request(cfg.get("ntfy_server", "https://ntfy.sh").rstrip("/") + "/",
+                                 data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+                                 headers={"Content-Type": "application/json"}, method="POST")
+    with urllib.request.urlopen(req, timeout=20) as r:
+        r.read()
+
+
 def notify(cfg, text, link="", dry=False):
     log("알림: " + text.replace("\n", " | "))
     if dry:
         return
+    sent = False
+    if cfg.get("ntfy_topic"):
+        try:
+            send_ntfy(cfg, text, link)
+            sent = True
+        except Exception as e:
+            log(f"휴대폰(ntfy) 알림 실패: {e}")
+    if os.path.exists(TOKEN_PATH):
+        try:
+            send_kakao(cfg, text, link)
+            sent = True
+        except Exception as e:
+            log(f"카카오톡 전송 실패: {e}")
+    if not sent:
+        log("알림 수단이 연결되지 않아 기록만 했습니다. phone_setup.bat 을 실행해 휴대폰 알림을 연결하세요.")
+
+
+def phone_setup(cfg):
+    """휴대폰 알림 주제 이름을 만들고 안내한 뒤 테스트 알림을 보낸다."""
+    import secrets
     try:
-        send_kakao(cfg, text, link)
-    except Exception as e:
-        log(f"카카오톡 전송 실패: {e}")
+        user = load_json(CONFIG_PATH, {})
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        user = {}
+    topic = user.get("ntfy_topic") or "haneul-" + secrets.token_hex(5)
+    user["ntfy_topic"] = cfg["ntfy_topic"] = topic
+    save_json(CONFIG_PATH, user)
+    print("=" * 56)
+    print("  휴대폰 알림 연결")
+    print("=" * 56)
+    print("\n1) 휴대폰에서 앱을 설치하세요.")
+    print("   - 안드로이드: Play 스토어에서 'ntfy' 검색 → 설치")
+    print("   - 아이폰: App Store에서 'ntfy' 검색 → 설치")
+    print("\n2) 앱을 열고 오른쪽 아래 [+] 를 누른 뒤, 주제(Topic) 칸에 아래 이름을 똑같이 입력하고 [구독/Subscribe]:")
+    print("\n        " + topic + "\n")
+    print("   (이 이름을 아는 사람만 알림을 볼 수 있으니 다른 사람에게 알려 주지 마세요)")
+    input("\n3) 구독을 마쳤으면 Enter 를 누르세요. 테스트 알림을 보냅니다...")
+    send_ntfy(cfg, "[하늘공인중개사] 광고 감시 알림 연결 완료\n오전 10시~저녁 6시에 광고가 밀리면 이 앱으로 알려 드립니다.")
+    print("\n휴대폰에 알림이 왔으면 완료입니다. 안 왔으면 주제 이름 철자를 다시 확인하세요.")
 
 
 def kakao_login(cfg):
@@ -942,6 +990,11 @@ def summary(cfg, state, dry=False):
 def main():
     cmd = sys.argv[1] if len(sys.argv) > 1 else "run"
     cfg = load_config()
+    if cmd == "phone-setup":
+        try:
+            return phone_setup(cfg)
+        except Exception as e:
+            sys.exit(f"\n연결 실패: {e}\n화면을 캡처해서 보내 주세요.")
     if cmd == "kakao-setup":
         try:
             return kakao_setup(cfg)
