@@ -838,26 +838,38 @@ def _check_complexes(cfg, state, complexes, reader, names, trades, today, day, a
             for a in arts[:5]:
                 log(f"   {a['rank']:>3}위 {a['trade']} {a['dong']}동 {a['flr_text']} {a['area']}㎡ {a['price']} {a['date']} {a['realtor']}")
 
-        for me in mine:
-            gkey = f"{name}|{me['trade']}|{me['dong']}|{me['floor'] or me['band']}|{me['area']:.0f}"
-            # 재광고 감지: 같은 매물의 우리 확인일자가 올라가면 직방 갱신 알림
-            prev = my_dates.get(gkey)
-            if me["date"] and prev and me["date"].isoformat() > prev:
-                day["readded"].append(gkey)
-                notify(cfg, f"[재광고 확인] {name} {me['dong']}동 {me['flr_text']}\n{me['trade']} {me['price']}\n네이버 {me['date']:%m/%d} 갱신됨\n→ 직방 광고도 같은 가격으로 갱신하세요", ARTICLE_URL + me["no"], dry)
-            if me["date"]:
-                my_dates[gkey] = me["date"].isoformat()
+        # 같은 집에 대한 우리 광고(이실장플러스·매경 등 여러 정보사)를 하나로 묶는다
+        groups = []
+        for m in sorted(mine, key=lambda x: x["rank"]):
+            for g in groups:
+                if same_listing(g[0], m) or same_listing(m, g[0]):
+                    g.append(m)
+                    break
+            else:
+                groups.append([m])
 
-            rivals = [o for o in arts if not is_mine(o, names) and same_listing(me, o)]
-            above = [o for o in rivals if o["rank"] < me["rank"] or (o["date"] and me["date"] and o["date"] > me["date"])]
+        for g in groups:
+            me = g[0]  # 우리 광고 중 가장 위에 노출된 것
+            latest = max((x["date"] for x in g if x["date"]), default=None)
+            gkey = f"{name}|{me['trade']}|{me['dong']}|{me['floor'] or me['band']}|{me['area']:.0f}"
+            # 재광고 감지: 같은 매물의 우리 최신 확인일자가 올라가면 직방 갱신 알림
+            prev = my_dates.get(gkey)
+            if latest and prev and latest.isoformat() > prev:
+                day["readded"].append(gkey)
+                notify(cfg, f"[재광고 확인] {name} {me['dong']}동 {me['flr_text']}\n{me['trade']} {me['price']}\n네이버 {latest:%m/%d} 갱신됨\n→ 직방 광고도 같은 가격으로 갱신하세요", ARTICLE_URL + me["no"], dry)
+            if latest:
+                my_dates[gkey] = latest.isoformat()
+
+            rivals = [o for o in arts if not is_mine(o, names) and any(same_listing(x, o) for x in g)]
+            above = [o for o in rivals if o["rank"] < me["rank"] or (o["date"] and latest and o["date"] > latest)]
             if not above:
                 day["behind"].pop(gkey, None)
                 continue
             top = min(above, key=lambda o: o["rank"])
-            day["behind"][gkey] = f"{name} {me['dong']}동 {me['flr_text']} {me['trade']} {me['price']} (내 {me['rank']}위, {top['realtor']} {top['rank']}위)"
+            day["behind"][gkey] = f"{name} {me['dong']}동 {me['flr_text']} {me['trade']} {me['price']} (우리 {me['rank']}위, {top['realtor']} {top['rank']}위)"
 
             # 같은 경쟁 광고·같은 확인일자로는 한 번만 알림 (비용 드는 재광고를 부추기지 않도록)
-            akey = f"{me['no']}>{top['no']}@{top['date']}"
+            akey = f"{gkey}>{top['no']}@{top['date']}"
             if akey in alerted:
                 continue
             if day["alerts"] >= cfg.get("max_alerts_per_day", 20):
@@ -866,13 +878,14 @@ def _check_complexes(cfg, state, complexes, reader, names, trades, today, day, a
             day["alerts"] += 1
             new_alerts += 1
             price_note = "" if top["price"] == me["price"] else f"\n(상대 가격 {top['price']} — 다른 호수일 수 있음)"
-            d_me = f"{me['date']:%m/%d}" if me["date"] else "?"
+            d_me = f"{latest:%m/%d}" if latest else "?"
             d_top = f"{top['date']:%m/%d}" if top["date"] else "?"
+            many = f" · 우리 광고 {len(g)}건" if len(g) > 1 else ""
             notify(cfg,
                    f"[광고 밀림] {name} {me['dong']}동 {me['flr_text']}\n"
                    f"{me['trade']} {me['price']} · 전용 {me['area']:.0f}㎡\n"
                    f"{top['realtor']} {top['rank']}위({d_top})\n"
-                   f"우리 {me['rank']}위({d_me})"
+                   f"우리 최고 {me['rank']}위({d_me}){many}"
                    f"{price_note}\n→ 이실장에서 재광고 검토",
                    ARTICLE_URL + top["no"], dry)
         time.sleep(2)
