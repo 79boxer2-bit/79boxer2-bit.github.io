@@ -8,7 +8,16 @@
 - 재광고하면 다음 점검 때 감지해서 **"직방도 갱신하세요"** 알림을 보냅니다.
 - 저녁 6시에 **오늘 요약**을 보냅니다.
 
-## 설치 (처음 한 번, 30분 정도)
+## 가장 쉬운 설치: 파일 하나 더블클릭
+1. https://github.com/79boxer2-bit/79boxer2-bit.github.io/blob/main/monitor/setup.bat 를 열고, 오른쪽 위 **다운로드 아이콘(Download raw file)** 을 누릅니다.
+2. 받은 `setup.bat` 을 더블클릭합니다.
+   - "Windows의 PC 보호" 창이 뜨면 **추가 정보 → 실행** 을 누르세요.
+3. 화면 안내대로 진행하면 Python 설치, 프로그램 내려받기(`C:\HaneulAdMonitor`), 단지 주소 입력, 테스트, 자동 실행 등록까지 한 번에 끝납니다.
+4. 카카오톡 연결만 아래 **5단계**를 따로 해 주세요.
+
+프로그램을 새 버전으로 바꿀 때도 `setup.bat` 을 다시 실행하면 됩니다(설정은 그대로 유지).
+
+## 직접 설치 (자동 설치가 안 될 때)
 
 ### 1단계. Python 설치
 1. https://www.python.org/downloads/ 에서 **Download Python** 버튼을 눌러 설치 파일을 받습니다.

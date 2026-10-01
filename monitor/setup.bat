@@ -1,0 +1,93 @@
+@echo off
+chcp 65001 >nul
+setlocal EnableExtensions EnableDelayedExpansion
+title Haneul Ad Monitor Setup
+set "DEST=C:\HaneulAdMonitor"
+set "ZIPURL=https://github.com/79boxer2-bit/79boxer2-bit.github.io/archive/refs/heads/main.zip"
+
+echo ==================================================
+echo   하늘공인중개사 네이버 광고 감시 - 자동 설치
+echo ==================================================
+echo.
+
+rem ---------- 1. Python 찾기 (없으면 설치) ----------
+set "PY="
+for /f "delims=" %%P in ('py -3 -c "import sys;print(sys.executable)" 2^>nul') do set "PY=%%P"
+if not defined PY for /f "delims=" %%P in ('python -c "import sys;print(sys.executable)" 2^>nul') do set "PY=%%P"
+if not defined PY (
+  echo [1/4] Python 이 없어 설치합니다. 2~3분 걸립니다...
+  winget install -e --id Python.Python.3.12 --scope user --silent --accept-package-agreements --accept-source-agreements
+  if exist "%LOCALAPPDATA%\Programs\Python\Python312\python.exe" set "PY=%LOCALAPPDATA%\Programs\Python\Python312\python.exe"
+)
+if not defined PY (
+  echo.
+  echo Python 자동 설치에 실패했습니다.
+  echo https://www.python.org/downloads/ 에서 직접 설치한 뒤 이 파일을 다시 실행하세요.
+  echo 설치 첫 화면에서 "Add python.exe to PATH" 를 꼭 체크하세요.
+  pause
+  exit /b 1
+)
+for %%D in ("%PY%") do set "PYW=%%~dpDpythonw.exe"
+echo [1/4] Python 확인: %PY%
+
+rem ---------- 2. 프로그램 내려받기 ----------
+echo [2/4] 프로그램을 내려받습니다...
+set "TMPZIP=%TEMP%\haneul_monitor.zip"
+set "TMPDIR=%TEMP%\haneul_monitor"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$ProgressPreference='SilentlyContinue'; Invoke-WebRequest -UseBasicParsing '%ZIPURL%' -OutFile '%TMPZIP%'; if (Test-Path '%TMPDIR%') { Remove-Item -Recurse -Force '%TMPDIR%' }; Expand-Archive -Force '%TMPZIP%' '%TMPDIR%'"
+if errorlevel 1 (
+  echo 내려받기에 실패했습니다. 인터넷 연결을 확인하세요.
+  pause
+  exit /b 1
+)
+if not exist "%DEST%" mkdir "%DEST%"
+rem 설정·기록 파일은 덮어쓰지 않고 프로그램 파일만 갱신
+for /d %%R in ("%TMPDIR%\*") do (
+  copy /Y "%%R\monitor\ad_monitor.py" "%DEST%\" >nul
+  copy /Y "%%R\monitor\config.example.json" "%DEST%\" >nul
+  copy /Y "%%R\monitor\README.md" "%DEST%\" >nul
+  copy /Y "%%R\monitor\uninstall_task.bat" "%DEST%\" >nul
+  copy /Y "%%R\monitor\setup.bat" "%DEST%\" >nul
+)
+if not exist "%DEST%\ad_monitor.py" (
+  echo 프로그램 파일 복사에 실패했습니다.
+  pause
+  exit /b 1
+)
+echo [2/4] 설치 위치: %DEST%
+
+rem ---------- 3. 단지 주소 입력 ----------
+if not exist "%DEST%\config.json" (
+  copy /Y "%DEST%\config.example.json" "%DEST%\config.json" >nul
+  echo.
+  echo [3/4] 메모장이 열립니다.
+  echo       네이버 부동산에서 각 단지 화면을 열고, 주소창 주소를 복사해서
+  echo       해당 단지의 "url": "" 따옴표 안에 붙여 넣으세요.
+  echo       다 넣었으면 저장^(Ctrl+S^)하고 메모장을 닫으세요.
+  echo.
+  pause
+  start /wait notepad "%DEST%\config.json"
+) else (
+  echo [3/4] 기존 설정^(config.json^)을 그대로 사용합니다.
+)
+
+rem ---------- 4. 테스트 + 자동 실행 등록 ----------
+echo.
+echo [4/4] 첫 단지로 테스트합니다...
+echo --------------------------------------------------
+"%PY%" "%DEST%\ad_monitor.py" test
+echo --------------------------------------------------
+echo 위에 "우리 매물 N건" 이 1건 이상 나오면 정상입니다.
+echo 오류가 보이면 이 창을 캡처해서 보내 주세요.
+echo.
+
+schtasks /Create /F /TN "HaneulAdMonitor" /SC MINUTE /MO 30 /TR "\"%PYW%\" \"%DEST%\ad_monitor.py\"" >nul
+if errorlevel 1 (
+  echo 자동 실행 등록에 실패했습니다. 이 파일을 마우스 오른쪽 - 관리자 권한으로 실행해 보세요.
+) else (
+  echo 자동 실행 등록 완료: PC가 켜져 있으면 30분마다, 오전 10시~저녁 6시에만 감시합니다.
+)
+echo.
+echo 남은 일: 카카오톡 연결 ^(README.md 5단계^). 연결 전까지 결과는 %DEST%\monitor.log 에만 기록됩니다.
+echo.
+pause
