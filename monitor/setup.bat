@@ -57,6 +57,7 @@ for /d %%R in ("%TMPDIR%\*") do (
   copy /Y "%%R\monitor\uninstall_task.bat" "%DEST%\" >nul
   copy /Y "%%R\monitor\kakao_setup.bat" "%DEST%\" >nul
   copy /Y "%%R\monitor\phone_setup.bat" "%DEST%\" >nul
+  copy /Y "%%R\monitor\check_now.bat" "%DEST%\" >nul
   copy /Y "%%R\monitor\setup.bat" "%DEST%\" >nul
 )
 if not exist "%DEST%\ad_monitor.py" (
