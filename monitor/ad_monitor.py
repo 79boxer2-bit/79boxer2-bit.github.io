@@ -884,14 +884,42 @@ def check(cfg, state, dry=False, only_first=False):
         except Exception as e:
             log(f"브라우저 시작 실패: {e}")
             return 0
+    out = {"behind": [], "readded": []}
     try:
-        return _check_complexes(cfg, state, complexes, reader, names, trades, today, day, alerted, my_dates, dry, only_first)
+        n = _check_complexes(cfg, state, complexes, reader, names, trades, today, day, alerted, my_dates, dry, only_first, out)
     finally:
         if reader:
             reader.__exit__()
+    send_digest(cfg, out, dry)
+    return n
 
 
-def _check_complexes(cfg, state, complexes, reader, names, trades, today, day, alerted, my_dates, dry, only_first):
+def short_realtor(name):
+    """'시티프라디움공인중개사사무소' -> '시티프라디움'"""
+    t = re.sub(r"(공인중개사사무소|공인중개사|중개사무소|부동산중개|사무소)$", "", str(name or "").strip())
+    return t or str(name or "")
+
+
+def send_digest(cfg, out, dry=False):
+    """이번 점검 결과를 카톡 한 통(길면 200자씩 나눠서)으로 보낸다."""
+    lines = []
+    if out["behind"]:
+        lines.append(f"[광고 밀림 {len(out['behind'])}건] {now():%m/%d %H:%M}")
+        for i, b in enumerate(out["behind"], 1):
+            lines.append(f"{i}) {b['where']}")
+            lines.append(f"   {b['price']} · {b['rival']} {b['rival_date']} (우리 {b['my_date']})")
+        lines.append("→ 이실장 재광고 검토")
+    if out["readded"]:
+        if lines:
+            lines.append("")
+        lines.append(f"[재광고 확인 {len(out['readded'])}건] 직방도 갱신하세요")
+        for r in out["readded"]:
+            lines.append(f"- {r}")
+    if lines:
+        notify(cfg, "\n".join(lines), "https://fin.land.naver.com", dry)
+
+
+def _check_complexes(cfg, state, complexes, reader, names, trades, today, day, alerted, my_dates, dry, only_first, out):
     new_alerts = 0
     for c in complexes:
         no = complex_no(c.get("url") or c.get("no"))
@@ -930,17 +958,23 @@ def _check_complexes(cfg, state, complexes, reader, names, trades, today, day, a
             prev = my_dates.get(gkey)
             if latest and prev and latest.isoformat() > prev:
                 day["readded"].append(gkey)
-                notify(cfg, f"[재광고 확인] {name} {me['dong']}동 {me['flr_text']}\n{me['trade']} {me['price']}\n네이버 {latest:%m/%d} 갱신됨\n→ 직방 광고도 같은 가격으로 갱신하세요", ARTICLE_URL + me["no"], dry)
+                out["readded"].append(f"{name} {me['dong']}동 {me['flr_text']} {me['trade']} {me['price']}")
             if latest:
                 my_dates[gkey] = latest.isoformat()
 
             rivals = [o for o in arts if not is_mine(o, names) and any(same_listing(x, o) for x in g)]
-            above = [o for o in rivals if o["rank"] < me["rank"] or (o["date"] and latest and o["date"] > latest)]
+            newer = [o for o in rivals if o["date"] and latest and o["date"] > latest]
+            if cfg.get("alert_rule", "date") == "date":  # 다른 부동산 확인일자가 우리보다 최신일 때만
+                above = newer
+            else:
+                above = newer + [o for o in rivals if o["rank"] < me["rank"] and o not in newer]
             if not above:
                 day["behind"].pop(gkey, None)
                 continue
-            top = min(above, key=lambda o: o["rank"])
-            day["behind"][gkey] = f"{name} {me['dong']}동 {me['flr_text']} {me['trade']} {me['price']} (우리 {me['rank']}위, {top['realtor']} {top['rank']}위)"
+            top = max(above, key=lambda o: (o["date"] or datetime.date.min, -o["rank"]))
+            d_me = f"{latest:%m/%d}" if latest else "?"
+            d_top = f"{top['date']:%m/%d}" if top["date"] else "?"
+            day["behind"][gkey] = f"{name} {me['dong']}동 {me['flr_text']} {me['trade']} {me['price']} ({short_realtor(top['realtor'])} {d_top} > 우리 {d_me})"
 
             # 같은 경쟁 광고·같은 확인일자로는 한 번만 알림 (비용 드는 재광고를 부추기지 않도록)
             akey = f"{gkey}>{top['no']}@{top['date']}"
@@ -951,17 +985,12 @@ def _check_complexes(cfg, state, complexes, reader, names, trades, today, day, a
             alerted[akey] = today
             day["alerts"] += 1
             new_alerts += 1
-            price_note = "" if top["price"] == me["price"] else f"\n(상대 가격 {top['price']} — 다른 호수일 수 있음)"
-            d_me = f"{latest:%m/%d}" if latest else "?"
-            d_top = f"{top['date']:%m/%d}" if top["date"] else "?"
-            many = f" · 우리 광고 {len(g)}건" if len(g) > 1 else ""
-            notify(cfg,
-                   f"[광고 밀림] {name} {me['dong']}동 {me['flr_text']}\n"
-                   f"{me['trade']} {me['price']} · 전용 {me['area']:.0f}㎡\n"
-                   f"{top['realtor']} {top['rank']}위({d_top})\n"
-                   f"우리 최고 {me['rank']}위({d_me}){many}"
-                   f"{price_note}\n→ 이실장에서 재광고 검토",
-                   ARTICLE_URL + top["no"], dry)
+            out["behind"].append({
+                "where": f"{name} {me['dong']}동 {me['flr_text']}",
+                "price": f"{me['trade']} {me['price']}" + ("" if top["price"] == me["price"] else f"(상대 {top['price']})"),
+                "rival": short_realtor(top["realtor"]), "rival_date": d_top, "my_date": d_me,
+            })
+            log(f"   밀림: {name} {me['dong']}동 {me['flr_text']} {me['trade']} {me['price']} - {top['realtor']} {d_top} / 우리 {d_me} (광고 {len(g)}건)")
         time.sleep(2)
 
     # 30일 지난 기록 정리
@@ -975,12 +1004,10 @@ def summary(cfg, state, dry=False):
     today = now().date().isoformat()
     day = state.get("days", {}).get(today, {"alerts": 0, "readded": [], "behind": {}})
     behind = list(day.get("behind", {}).values())
-    lines = [f"[오늘 광고 요약 {now():%m/%d}]",
-             f"밀림 알림 {day.get('alerts', 0)}건 · 재광고 {len(day.get('readded', []))}건",
-             f"아직 밀린 매물 {len(behind)}건"]
-    lines += ["- " + b for b in behind[:8]]
-    if len(behind) > 8:
-        lines.append(f"외 {len(behind) - 8}건 (monitor.log 참고)")
+    lines = [f"[오늘 요약 {now():%m/%d}] 알림 {day.get('alerts', 0)} · 재광고 {len(day.get('readded', []))} · 아직 밀림 {len(behind)}"]
+    lines += [f"- {b}" for b in behind[:10]]
+    if len(behind) > 10:
+        lines.append(f"외 {len(behind) - 10}건")
     if day.get("readded"):
         lines.append("※ 오늘 재광고한 매물은 직방도 갱신했는지 확인하세요")
     notify(cfg, "\n".join(lines), dry=dry)
