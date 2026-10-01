@@ -82,6 +82,9 @@ DEFAULT_CONFIG = {
     "trade_types": ["매매", "전세", "월세"],
     "max_pages": 10,
     "max_alerts_per_day": 20,
+    "source": "browser",
+    "browser": "msedge",
+    "show_browser": False,
     "complexes": [],
     "kakao": {"rest_api_key": "", "client_secret": "", "redirect_uri": "https://localhost"},
 }
@@ -246,6 +249,200 @@ def fetch_complex(no, trade_types, max_pages, debug=False):
             break
         time.sleep(1.2)
     return items
+
+
+# ---------------------------------------------------------------- 네이버페이 부동산(브라우저로 읽기)
+# 예전 모바일 주소가 매물을 주지 않아, 사무실 PC의 엣지로 단지 화면을 열고
+# 화면이 받아오는 매물 데이터를 그대로 읽는다. 순서가 곧 화면 노출 순서.
+
+FIN_URL = "https://fin.land.naver.com/complexes/{no}?tab=article"
+TRADE_NAMES = {"A1": "매매", "B1": "전세", "B2": "월세", "B3": "단기임대"}
+
+
+def flatten(obj, prefix="", out=None):
+    out = {} if out is None else out
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            flatten(v, f"{prefix}.{k}" if prefix else str(k), out)
+    elif isinstance(obj, list):
+        if obj and all(not isinstance(x, (dict, list)) for x in obj):
+            out[prefix] = obj
+    else:
+        out[prefix] = obj
+    return out
+
+
+def pick(flat, *names, exclude=()):
+    """평탄화된 키 중 끝 이름이 names 와 같은 값(대소문자 무시), 없으면 이름을 포함하는 값."""
+    keys = list(flat)
+    for n in names:
+        for k in keys:
+            last = k.rsplit(".", 1)[-1].lower()
+            if last == n and flat[k] not in (None, "", []) and not any(e in k.lower() for e in exclude):
+                return flat[k]
+    for n in names:
+        for k in keys:
+            if n in k.lower() and flat[k] not in (None, "", []) and not any(e in k.lower() for e in exclude):
+                return flat[k]
+    return ""
+
+
+ARTICLE_KEYS = ("articlenumber", "articleno", "atclno", "articleid")
+
+
+def looks_like_article(d):
+    if not isinstance(d, dict):
+        return False
+    keys = {k.lower() for k in flatten(d)}
+    return any(k.rsplit(".", 1)[-1] in ARTICLE_KEYS for k in keys)
+
+
+def article_lists(payload):
+    """JSON 어디에 있든 매물 목록(매물번호가 있는 dict 들의 리스트)을 찾는다."""
+    found = []
+    if isinstance(payload, list):
+        if payload and sum(looks_like_article(x) for x in payload) >= max(1, len(payload) // 2):
+            found.append(payload)
+        else:
+            for x in payload:
+                found += article_lists(x)
+    elif isinstance(payload, dict):
+        for v in payload.values():
+            found += article_lists(v)
+    return found
+
+
+def won(v):
+    """43000 (만원) -> '4억 3,000'. 숫자가 아니면 그대로."""
+    t = str(v or "").replace(",", "").strip()
+    if not t.isdigit():
+        return str(v or "")
+    n = int(t)
+    if n >= 10 ** 7:  # 원 단위로 온 경우
+        n //= 10000
+    eok, man = divmod(n, 10000)
+    return (f"{eok}억 {man:,}" if man else f"{eok}억") if eok else f"{man:,}"
+
+
+def to_legacy(d):
+    """네이버페이 부동산 매물 dict -> 기존 비교 로직이 쓰는 형식."""
+    f = flatten(d)
+    trade = str(pick(f, "tradetypename", "tradtpnm", "tradetype", "tradetypecode", "dealtype"))
+    trade = TRADE_NAMES.get(trade, trade)
+    floor = pick(f, "floorinfo", "flrinfo")
+    if not floor:
+        tf, tot = pick(f, "targetfloor", "floor", "correspondingfloor"), pick(f, "totalfloor", "totalfloorcount")
+        floor = f"{tf}/{tot}" if tf else ""
+    date = pick(f, "articleconfirmdate", "confirmdate", "atclcfmymd", "confirmymd", "cfmymd",
+                "verificationdate", "exposurestartdate", "articleconfirmymd")
+    if isinstance(date, (int, float)) and date > 1e11:  # 밀리초 타임스탬프
+        date = datetime.datetime.fromtimestamp(date / 1000, KST).strftime("%Y%m%d")
+    return {
+        "atclNo": str(pick(f, *ARTICLE_KEYS)),
+        "atclNm": str(pick(f, "complexname", "atclnm", "articlename")),
+        "tradTpNm": trade,
+        "bildNm": str(pick(f, "dongname", "buildingname", "bildnm", "buildingdong")),
+        "flrInfo": str(floor),
+        "spc2": str(pick(f, "exclusivespace", "exclusivearea", "spc2", "area2", "exclusiveareasize")),
+        "prcInfo": won(pick(f, "dealprice", "warrantyprice", "prcinfo", "dealorwarrantprc", "price", exclude=("rent",))),
+        "rentPrc": won(pick(f, "rentprice", "rentprc", "monthlyrent")),
+        "atclCfmYmd": str(date),
+        "rltrNm": str(pick(f, "brokeragename", "realtorname", "rltrnm", "brokername", "agentname", "officename")),
+    }
+
+
+SCROLL_JS = """() => {
+  let moved = 0;
+  for (const el of document.querySelectorAll('*')) {
+    if (el.scrollHeight > el.clientHeight + 40 && el.clientHeight > 150) {
+      const st = getComputedStyle(el).overflowY;
+      if (st === 'auto' || st === 'scroll') { el.scrollTop = el.scrollHeight; moved++; }
+    }
+  }
+  window.scrollTo(0, document.body.scrollHeight);
+  return moved;
+}"""
+
+
+class BrowserReader:
+    def __init__(self, cfg, debug=False):
+        self.cfg, self.debug = cfg, debug
+
+    def __enter__(self):
+        try:
+            from playwright.sync_api import sync_playwright
+        except ImportError:
+            raise RuntimeError("브라우저 모듈이 없습니다. setup.bat 을 다시 실행해 주세요. (pip install playwright)")
+        self._pw = sync_playwright().start()
+        opts = dict(user_data_dir=os.path.join(HERE, "browser_profile"),
+                    headless=not self.cfg.get("show_browser", False),
+                    viewport={"width": 1400, "height": 1000}, locale="ko-KR")
+        last = None
+        tries = [{"executable_path": self.cfg["browser_path"]}] if self.cfg.get("browser_path") else []
+        tries += [{"channel": self.cfg.get("browser", "msedge")}, {"channel": "chrome"}]
+        for extra in tries:
+            try:
+                self.ctx = self._pw.chromium.launch_persistent_context(**extra, **opts)
+                break
+            except Exception as e:
+                last = e
+        else:
+            self._pw.stop()
+            raise RuntimeError(f"엣지/크롬 브라우저를 열 수 없습니다: {last}")
+        self.page = self.ctx.pages[0] if self.ctx.pages else self.ctx.new_page()
+        return self
+
+    def __exit__(self, *a):
+        try:
+            self.ctx.close()
+        finally:
+            self._pw.stop()
+
+    def fetch(self, no, trade_types):
+        caught = []  # (도착순서, 매물목록)
+
+        def on_response(resp):
+            try:
+                if "json" not in (resp.headers.get("content-type") or ""):
+                    return
+                data = resp.json()
+            except Exception:
+                return
+            lists = article_lists(data)
+            if self.debug:
+                os.makedirs(DEBUG_DIR, exist_ok=True)
+                with open(os.path.join(DEBUG_DIR, f"{no}_{len(caught):02d}_{'list' if lists else 'etc'}.json"), "w", encoding="utf-8") as fp:
+                    json.dump({"url": resp.url, "data": data}, fp, ensure_ascii=False, indent=1)
+            for lst in lists:
+                caught.append(lst)
+
+        self.page.on("response", on_response)
+        try:
+            self.page.goto(FIN_URL.format(no=no), wait_until="domcontentloaded", timeout=45000)
+            self.page.wait_for_timeout(4000)
+            seen = -1
+            for _ in range(self.cfg.get("max_pages", 10)):
+                n = sum(len(x) for x in caught)
+                if n == seen:
+                    break
+                seen = n
+                self.page.evaluate(SCROLL_JS)
+                self.page.wait_for_timeout(2500)
+            if self.debug:
+                os.makedirs(DEBUG_DIR, exist_ok=True)
+                self.page.screenshot(path=os.path.join(DEBUG_DIR, f"{no}_screen.png"))
+        finally:
+            self.page.remove_listener("response", on_response)
+
+        items, seen_no = [], set()
+        for lst in caught:
+            for d in lst:
+                a = to_legacy(d)
+                if a["atclNo"] and a["atclNo"] not in seen_no:
+                    seen_no.add(a["atclNo"])
+                    items.append(a)
+        want = set(trade_types)
+        return [a for a in items if not a["tradTpNm"] or a["tradTpNm"] in want]
 
 
 # ---------------------------------------------------------------- 같은 매물 판단
@@ -421,6 +618,22 @@ def check(cfg, state, dry=False, only_first=False):
     new_alerts = 0
 
     complexes = cfg["complexes"]
+    reader = None
+    if cfg.get("source", "browser") == "browser":
+        try:
+            reader = BrowserReader(cfg, debug=only_first).__enter__()
+        except Exception as e:
+            log(f"브라우저 시작 실패: {e}")
+            return 0
+    try:
+        return _check_complexes(cfg, state, complexes, reader, names, trades, today, day, alerted, my_dates, dry, only_first)
+    finally:
+        if reader:
+            reader.__exit__()
+
+
+def _check_complexes(cfg, state, complexes, reader, names, trades, today, day, alerted, my_dates, dry, only_first):
+    new_alerts = 0
     for c in complexes:
         no = complex_no(c.get("url") or c.get("no"))
         name = c.get("name", no)
@@ -428,7 +641,7 @@ def check(cfg, state, dry=False, only_first=False):
             log(f"[{name}] 단지 번호가 없습니다. complexes.txt 에 네이버 부동산 단지 주소를 넣어 주세요.")
             continue
         try:
-            raw = fetch_complex(no, trades, cfg.get("max_pages", 10), debug=only_first)
+            raw = reader.fetch(no, trades) if reader else fetch_complex(no, trades, cfg.get("max_pages", 10), debug=only_first)
         except Exception as e:
             log(f"[{name}] 네이버 읽기 실패: {e}")
             continue

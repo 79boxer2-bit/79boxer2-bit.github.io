@@ -29,6 +29,13 @@ if not defined PY (
 )
 for %%D in ("%PY%") do set "PYW=%%~dpDpythonw.exe"
 echo [1/4] Python 확인: %PY%
+echo       브라우저 연결 모듈을 설치합니다. 처음에는 1~2분 걸립니다...
+"%PY%" -m pip install --quiet --disable-pip-version-check --upgrade playwright
+if errorlevel 1 (
+  echo 브라우저 연결 모듈 설치에 실패했습니다. 인터넷 연결을 확인하고 다시 실행하세요.
+  pause
+  exit /b 1
+)
 
 rem ---------- 2. 프로그램 내려받기 ----------
 echo [2/4] 프로그램을 내려받습니다...
@@ -79,6 +86,7 @@ echo --------------------------------------------------
 "%PY%" "%DEST%\ad_monitor.py" test
 echo --------------------------------------------------
 echo 단지마다 "네이버 단지명"이 맞는지, "우리 매물 N건"이 나오는지 확인하세요.
+echo 매물이 0건이면 %DEST%\debug 폴더의 _screen.png 그림을 보내 주세요.
 echo 오류가 보이면 이 창을 캡처해서 보내 주세요.
 echo.
 
