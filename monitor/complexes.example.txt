@@ -1,11 +1,11 @@
-# 감시할 단지 목록: 한 줄에 "단지이름 네이버부동산주소(또는 단지번호)" 를 적으세요.
-# 네이버 부동산 지도에서 단지를 누른 상태의 주소를 그대로 붙여 넣어도 됩니다.
+# 감시할 단지 목록: 한 줄에 "단지이름 네이버부동산 지도주소" 를 적으세요.
+# 네이버페이 부동산 지도에서 단지를 누른 상태의 주소창 주소를 통째로 붙여 넣으면 됩니다.
 # 다 적었으면 저장(Ctrl+S)하고 메모장을 닫으세요.
 
-시티프라디움1차 113506
-양우2차 110293
-리젠시빌란트 132322
-양우1차 107719
-대광2차 12928
-동광뷰엘 113039
-남양아이파크 27766
+시티프라디움1차 https://fin.land.naver.com/map?center=3zb2oX-2AwCfc&zoom=16.466844086528347&mapType=satellite&layer=NobwRAlgJmBcYGMD2BbADgGwKYA8D6UWALgIYQZgA0YaJATiSgM5zjLrY4CSMsAjHwDMAVgAMANgC%2B1JlnoIAFgAV6jFrHCkARnDD0iEBNip66Bo1gAqDQpYCeaLOrABBPmGlg6xAK50AdiRaxrBEdD5YkgC6QA&tradeTypes=A1-B1-B2&realEstateTypes=A01-A04-B01
+양우2차 https://fin.land.naver.com/map?center=3zb6A9-2AwJlw&zoom=16.466844086528347&mapType=satellite&tradeTypes=A1-B1-B2&realEstateTypes=A01-A04-B01&layer=NobwRAlgJmBcYGMD2BbADgGwKYA8D6UWALgIYQZgA0YaJATiSgM5zjLrY4CSMsAjHwAMAJgCcAZgC%2B1JlnoIAFgAV6jFrHCkARnDBEGAOyYkERCEgNUw9MwmwAVBoXsBPNFnVgAgnwC0AIT9-YSt9EiMTMwslFywLAHNXdwA5AFcULSw6XT5Qw2NTcwNHEmc3LF0fMGkwOmJUugMSLWw4fVSsSQBdIA
+리젠시빌란트 https://fin.land.naver.com/map?center=3zaYDJ-2AwFKM&zoom=16.466844086528347&mapType=satellite&tradeTypes=A1-B1-B2&realEstateTypes=A01-A04-B01&layer=NobwRAlgJmBcYGMD2BbADgGwKYA8D6UWALgIYQZgA0YaJATiSgM5zjLrY4CSMsAjAGYATMKEBfakyz0EACwAK9Ri1jhSAIzhgiDAHZMSCIhCS6qYesYTYAKg0I2AnmiwqwAQT4BaAELefQuY6JPqGxqbyjlimAOZOLgByAK4o6lh0WnxBegZGJrp2JA7OWFqeYBJgdMRJdLok6thwOklYYgC6QA
+양우1차 https://fin.land.naver.com/map?center=3zb2UJ-2AwMgk&zoom=16.466844086528347&mapType=satellite&tradeTypes=A1-B1-B2&realEstateTypes=A01-A04-B01&layer=NobwRAlgJmBcYGMD2BbADgGwKYA8D6UWALgIYQZgA0YaJATiSgM5zjLrY4CSMsAjAAYA7EL4BOAL7UmWeggAWABXqMWscKQBGcMEQYA7JiQREISfVTD1TCbABUGhOwE80WNWACCfALQAhXz8AJks9EkNjU3NFZyxzAHMXNwA5AFcUTSw6HQBmUIMjEzN9BxInVywdbzApMDpiVLp9Ek1sOD1UrAkAXSA
+대광2차 https://fin.land.naver.com/map?center=3zaS1f-2AwAvC&zoom=16.466844086528347&mapType=satellite&tradeTypes=A1-B1-B2&realEstateTypes=A01-A04-B01&layer=NobwRAlgJmBcYGMD2BbADgGwKYA8D6UWALgIYQZgA0YaJATiSgM5zjLrY4CSMsAjACYAnAIAcAX2pMs9BAAsACvUYtY4UgCM4YIgwB2TEgiIQkeqmHomE2ACoNCtgJ5osqsAEE%2BAWgBCP3wELXRIDIxMzBScsMwBzZ1cAOQBXFA0sOm0%2BYP1DY1M9exJHFyxtLzBJMDpiZLo9Eg1sOF1krHEAXSA
+동광뷰엘 https://fin.land.naver.com/map?center=3zbiwt-2Ax3ma&zoom=16.466844086528347&mapType=satellite&tradeTypes=A1-B1-B2&realEstateTypes=A01-A04-B01&layer=NobwRAlgJmBcYGMD2BbADgGwKYA8D6UWALgIYQZgA0YaJATiSgM5zjLrY4CSMsAjHwDMABkEBOAL7UmWeggAWABXqMWscKQBGcMEQYA7JiQREISfVTD1TCbABUGhOwE80WNWACCfALQAhXz8AJks9EkNjU3NFZyxzAHMXNwA5AFcUTSw6HT5QgyMTM30HEidXLB1vMCkwOmJUun0STWw4PVSsCQBdIA
+남양아이파크 https://fin.land.naver.com/map?center=3zbtD1-2AwWUE&zoom=16.466844086528347&mapType=satellite&tradeTypes=A1-B1-B2&realEstateTypes=A01-A04-B01&layer=NobwRAlgJmBcYGMD2BbADgGwKYA8D6UWALgIYQZgA0YaJATiSgM5zjLrY4CSMsATAHYBANmEBfakyz0EACwAK9Ri1jhSAIzhh6RCAmxVtdXfqwAVBoTMBPNFhVgAQgEYwEsHWIBXOgDsS6gawRHReWGIAukA

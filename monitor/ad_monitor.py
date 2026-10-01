@@ -257,6 +257,24 @@ def _lz_compress(text):
     return "".join(out)
 
 
+def article_tab_url(map_url, no):
+    """사장님이 복사한 지도 주소(center/zoom 포함)를 그대로 쓰되, 단지 창을 매물 탭으로 바꾼다."""
+    u = urllib.parse.urlparse(map_url)
+    q = urllib.parse.parse_qs(u.query, keep_blank_values=True)
+    layer = [{"id": "complex_detail", "params": {"complexId": int(no)}, "searchParams": {}, "returnable": True}]
+    if q.get("layer"):
+        try:
+            layer = json.loads(_lz_decompress(q["layer"][0])) or layer
+        except ValueError:
+            pass
+    for item in layer:
+        if item.get("id") == "complex_detail":
+            item.setdefault("searchParams", {}).update({"tab": "article", "articleTradeTypes": "A1-B1-B2"})
+    q["layer"] = [_lz_compress(json.dumps(layer, separators=(",", ":"), ensure_ascii=False))]
+    query = "&".join(f"{k}={urllib.parse.quote(v[0], safe='-$.')}" for k, v in q.items())
+    return urllib.parse.urlunparse(u._replace(query=query))
+
+
 def complex_map_url(no):
     """단지 매물 창이 열린 네이버페이 부동산 지도 주소."""
     layer = json.dumps([{"id": "complex_detail", "params": {"complexId": int(no)},
@@ -511,7 +529,9 @@ class BrowserReader:
         tries += [{"channel": self.cfg.get("browser", "msedge")}, {"channel": "chrome"}]
         for extra in tries:
             try:
-                self.ctx = self._pw.chromium.launch_persistent_context(**extra, **opts)
+                self.ctx = self._pw.chromium.launch_persistent_context(
+                    **extra, **opts, ignore_default_args=["--enable-automation"] + (["--no-sandbox"] if os.name == "nt" else []))
+                self.ctx.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
                 break
             except Exception as e:
                 last = e
@@ -527,7 +547,7 @@ class BrowserReader:
         finally:
             self._pw.stop()
 
-    def fetch(self, no, trade_types):
+    def fetch(self, no, trade_types, page_url=""):
         caught, seq = [], [0]
 
         def on_response(resp):
@@ -545,12 +565,19 @@ class BrowserReader:
                     json.dump({"url": resp.url, "data": data}, fp, ensure_ascii=False, indent=1)
             caught.extend(lists)
 
-        url = FIN_URL.format(no=no) if "{no}" in FIN_URL else complex_map_url(no)
+        if "{no}" in FIN_URL:
+            url = FIN_URL.format(no=no)
+        elif "fin.land.naver.com/map" in (page_url or ""):
+            url = article_tab_url(page_url, no)
+        else:
+            url = complex_map_url(no)
         self.page.on("response", on_response)
         cards = []
         try:
             self.page.goto(url, wait_until="domcontentloaded", timeout=45000)
             self.page.wait_for_timeout(5000)
+            if "404" in self.page.url:
+                log(f"   네이버가 '페이지 없음'으로 보냈습니다. complexes.txt 에 이 단지의 네이버 지도 주소를 통째로 넣어 주세요.")
             # 매물 탭이 닫혀 있으면 눌러 본다
             if not self.page.evaluate(CARDS_JS):
                 for label in ("매물", "단지 매물"):
@@ -797,7 +824,7 @@ def _check_complexes(cfg, state, complexes, reader, names, trades, today, day, a
             log(f"[{name}] 단지 번호가 없습니다. complexes.txt 에 네이버 부동산 단지 주소를 넣어 주세요.")
             continue
         try:
-            raw = reader.fetch(no, trades) if reader else fetch_complex(no, trades, cfg.get("max_pages", 10), debug=only_first)
+            raw = reader.fetch(no, trades, c.get("url", "")) if reader else fetch_complex(no, trades, cfg.get("max_pages", 10), debug=only_first)
         except Exception as e:
             log(f"[{name}] 네이버 읽기 실패: {e}")
             continue
