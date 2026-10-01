@@ -1038,6 +1038,13 @@ def main():
         log("=== 테스트: 모든 단지를 읽습니다 (알림 안 보냄, debug 폴더에 원본 저장) ===")
         check(cfg, state, dry=True, only_first=True)
         return
+    if cmd == "preview":
+        # 지금 밀린 매물 전체를 새 형식으로 미리 보내기 (보낸 기록은 남기지 않음)
+        log("=== 지금 점검(미리보기): 오늘 보낸 알림과 상관없이 현재 밀린 매물을 모두 보냅니다 ===")
+        n = check(cfg, {}, dry=False)
+        if n == 0:
+            notify(cfg, f"[지금 점검 {now():%m/%d %H:%M}]\n밀린 매물이 없습니다.")
+        return
     if cmd == "summary":
         summary(cfg, state)
         return save_json(STATE_PATH, state)
