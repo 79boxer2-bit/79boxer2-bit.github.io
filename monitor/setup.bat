@@ -50,15 +50,11 @@ if errorlevel 1 (
 if not exist "%DEST%" mkdir "%DEST%"
 rem 설정·기록 파일은 덮어쓰지 않고 프로그램 파일만 갱신
 for /d %%R in ("%TMPDIR%\*") do (
-  copy /Y "%%R\monitor\ad_monitor.py" "%DEST%\" >nul
-  copy /Y "%%R\monitor\config.example.json" "%DEST%\" >nul
-  copy /Y "%%R\monitor\complexes.example.txt" "%DEST%\" >nul
+  copy /Y "%%R\monitor\*.py" "%DEST%\" >nul
+  for %%F in ("%%R\monitor\*.bat") do if /i not "%%~nxF"=="setup.bat" copy /Y "%%F" "%DEST%\" >nul
+  copy /Y "%%R\monitor\setup.bat" "%DEST%\setup.new" >nul
+  copy /Y "%%R\monitor\*.example.*" "%DEST%\" >nul
   copy /Y "%%R\monitor\README.md" "%DEST%\" >nul
-  copy /Y "%%R\monitor\uninstall_task.bat" "%DEST%\" >nul
-  copy /Y "%%R\monitor\kakao_setup.bat" "%DEST%\" >nul
-  copy /Y "%%R\monitor\phone_setup.bat" "%DEST%\" >nul
-  copy /Y "%%R\monitor\check_now.bat" "%DEST%\" >nul
-  copy /Y "%%R\monitor\setup.bat" "%DEST%\" >nul
 )
 if not exist "%DEST%\ad_monitor.py" (
   echo 프로그램 파일 복사에 실패했습니다.
@@ -109,6 +105,8 @@ if errorlevel 1 (
   echo 자동 실행 등록 완료: PC가 켜져 있으면 30분마다, 오전 10시~저녁 6시에만 감시합니다.
 )
 echo.
-echo 남은 일: 휴대폰 알림 연결 - %DEST%\phone_setup.bat 실행. 연결 전까지 결과는 %DEST%\monitor.log 에만 기록됩니다.
+echo 카카오톡 연결이 아직이면 %DEST%\kakao_setup.bat 을 실행하세요. 지금 바로 점검하려면 %DEST%\check_now.bat 을 실행하세요.
 echo.
 pause
+rem 실행 중에 자기 자신을 덮어쓰지 않도록, 마지막 줄 하나로 새 설치 파일로 교체하고 끝낸다
+if exist "%DEST%\setup.new" copy /Y "%DEST%\setup.new" "%DEST%\setup.bat" >nul & del "%DEST%\setup.new" & exit /b 0
