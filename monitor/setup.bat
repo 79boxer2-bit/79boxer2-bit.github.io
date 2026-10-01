@@ -55,6 +55,7 @@ for /d %%R in ("%TMPDIR%\*") do (
   copy /Y "%%R\monitor\complexes.example.txt" "%DEST%\" >nul
   copy /Y "%%R\monitor\README.md" "%DEST%\" >nul
   copy /Y "%%R\monitor\uninstall_task.bat" "%DEST%\" >nul
+  copy /Y "%%R\monitor\kakao_setup.bat" "%DEST%\" >nul
   copy /Y "%%R\monitor\setup.bat" "%DEST%\" >nul
 )
 if not exist "%DEST%\ad_monitor.py" (
@@ -106,6 +107,6 @@ if errorlevel 1 (
   echo 자동 실행 등록 완료: PC가 켜져 있으면 30분마다, 오전 10시~저녁 6시에만 감시합니다.
 )
 echo.
-echo 남은 일: 카카오톡 연결 ^(README.md 5단계^). 연결 전까지 결과는 %DEST%\monitor.log 에만 기록됩니다.
+echo 남은 일: 카카오톡 연결 - %DEST%\kakao_setup.bat 실행. 연결 전까지 결과는 %DEST%\monitor.log 에만 기록됩니다.
 echo.
 pause

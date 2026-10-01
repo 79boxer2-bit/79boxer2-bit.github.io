@@ -783,7 +783,33 @@ def kakao_login(cfg):
         "refresh_token": res["refresh_token"],
         "refresh_expires_at": time.time() + int(res.get("refresh_token_expires_in", 0)),
     })
-    print("카카오톡 연결 완료. 'python ad_monitor.py kakao-test' 로 확인하세요.")
+    print("카카오톡 연결 완료.")
+
+
+def kakao_setup(cfg):
+    """REST API 키 입력 → 카카오 로그인 → 테스트 메시지까지 한 번에."""
+    print("=" * 50)
+    print("  카카오톡 알림 연결")
+    print("=" * 50)
+    k = cfg.setdefault("kakao", {})
+    cur = k.get("rest_api_key", "")
+    key = input(f"\n1) 카카오 앱의 REST API 키를 붙여 넣고 Enter{' (그대로 쓰려면 그냥 Enter)' if cur else ''}: ").strip() or cur
+    if not key:
+        sys.exit("REST API 키가 필요합니다.")
+    secret = input("2) 클라이언트 시크릿(Client Secret)을 켜 두셨으면 그 값을, 아니면 그냥 Enter: ").strip()
+    k.update({"rest_api_key": key, "redirect_uri": k.get("redirect_uri") or "https://localhost"})
+    if secret:
+        k["client_secret"] = secret
+    try:
+        user = load_json(CONFIG_PATH, {})
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        user = {}
+    user.setdefault("kakao", {}).update({kk: v for kk, v in k.items() if v})
+    save_json(CONFIG_PATH, user)
+    print("\n3) 브라우저가 열리면 카카오 로그인 → '동의하고 계속하기' 를 누르세요.")
+    kakao_login(cfg)
+    send_kakao(cfg, "[하늘공인중개사] 광고 감시 알림이 연결됐습니다.\n오전 10시~저녁 6시에 광고가 밀리면 여기로 알려 드립니다.")
+    print("\n완료! 카카오톡 '나와의 채팅'에 테스트 메시지가 왔는지 확인하세요.")
 
 
 # ---------------------------------------------------------------- 감시
@@ -916,6 +942,11 @@ def summary(cfg, state, dry=False):
 def main():
     cmd = sys.argv[1] if len(sys.argv) > 1 else "run"
     cfg = load_config()
+    if cmd == "kakao-setup":
+        try:
+            return kakao_setup(cfg)
+        except Exception as e:
+            sys.exit(f"\n연결 실패: {e}\n화면을 캡처해서 보내 주세요.")
     if cmd == "kakao-login":
         return kakao_login(cfg)
     if cmd == "kakao-test":
