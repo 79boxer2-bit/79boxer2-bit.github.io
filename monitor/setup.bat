@@ -50,15 +50,10 @@ if errorlevel 1 (
 if not exist "%DEST%" mkdir "%DEST%"
 rem 설정·기록 파일은 덮어쓰지 않고 프로그램 파일만 갱신
 for /d %%R in ("%TMPDIR%\*") do (
-  copy /Y "%%R\monitor\ad_monitor.py" "%DEST%\" >nul
-  copy /Y "%%R\monitor\config.example.json" "%DEST%\" >nul
-  copy /Y "%%R\monitor\complexes.example.txt" "%DEST%\" >nul
+  copy /Y "%%R\monitor\*.py" "%DEST%\" >nul
+  copy /Y "%%R\monitor\*.bat" "%DEST%\" >nul
+  copy /Y "%%R\monitor\*.example.*" "%DEST%\" >nul
   copy /Y "%%R\monitor\README.md" "%DEST%\" >nul
-  copy /Y "%%R\monitor\uninstall_task.bat" "%DEST%\" >nul
-  copy /Y "%%R\monitor\kakao_setup.bat" "%DEST%\" >nul
-  copy /Y "%%R\monitor\phone_setup.bat" "%DEST%\" >nul
-  copy /Y "%%R\monitor\check_now.bat" "%DEST%\" >nul
-  copy /Y "%%R\monitor\setup.bat" "%DEST%\" >nul
 )
 if not exist "%DEST%\ad_monitor.py" (
   echo 프로그램 파일 복사에 실패했습니다.
