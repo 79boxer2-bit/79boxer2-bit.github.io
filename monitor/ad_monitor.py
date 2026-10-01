@@ -17,6 +17,7 @@
 표준 라이브러리만 사용합니다(추가 설치 없음). Python 3.10 이상.
 """
 import datetime
+import hashlib
 import json
 import os
 import re
@@ -436,6 +437,61 @@ SCROLL_JS = """() => {
 }"""
 
 
+# 화면에서 매물 카드처럼 보이는 가장 안쪽 요소들(거래형태 + 면적/층 글자가 함께 있는 덩어리)
+CARDS_JS = """() => {
+  const ok = t => t && t.length < 600 && /(매매|전세|월세|단기임대)/.test(t) && /(㎡|m²|평|층)/.test(t);
+  const all = [...document.querySelectorAll('li, a, article, div, button')].filter(el => ok(el.innerText));
+  const leaf = all.filter(el => !all.some(o => o !== el && el.contains(o)));
+  return leaf.map(el => {
+    const a = el.closest('a[href]') || el.querySelector('a[href]');
+    return { text: el.innerText.trim(), href: a ? a.href : '' };
+  });
+}"""
+
+CARD_RE = {
+    "trade": re.compile(r"(매매|전세|월세|단기임대)\s*(\d+억(?:\s?\d{1,3}(?:,\d{3})*)?|\d{1,3}(?:,\d{3})+|\d+)(?:\s*/\s*(\d{1,3}(?:,\d{3})+|\d+))?"),
+    "dong": re.compile(r"(\d{2,4})\s*동"),
+    "floor": re.compile(r"([저중고]|\d{1,3})\s*/\s*(\d{1,3})\s*층"),
+    "area2": re.compile(r"(\d+(?:\.\d+)?)\s*/\s*(\d+(?:\.\d+)?)\s*(?:㎡|m²)"),
+    "area1": re.compile(r"(\d+(?:\.\d+)?)\s*(?:㎡|m²)"),
+    "date": re.compile(r"(\d{2,4})\.(\d{1,2})\.(\d{1,2})\.?"),
+    "realtor": re.compile(r"([가-힣A-Za-z0-9&]+(?:공인중개사(?:사무소)?|부동산(?:중개)?(?:사무소)?|중개법인|중개사무소))"),
+    "no": re.compile(r"(\d{9,11})"),
+}
+
+
+def card_to_legacy(card, my_names):
+    t = card.get("text", "")
+    one = " ".join(t.split())
+    m = CARD_RE["trade"].search(one)
+    trade, price, rent = (m.group(1), m.group(2).strip(), (m.group(3) or "")) if m else ("", "", "")
+    if trade not in ("월세", "단기임대"):
+        rent = ""
+    fl = CARD_RE["floor"].search(one)
+    ar = CARD_RE["area2"].search(one)
+    area = ar.group(2) if ar else (CARD_RE["area1"].search(one).group(1) if CARD_RE["area1"].search(one) else "")
+    dates = CARD_RE["date"].findall(one)
+    date = "".join(f"{int(y) % 100:02d}{int(mo):02d}{int(d):02d}" for y, mo, d in dates[-1:])
+    realtor = next((n for n in my_names if n and n[:2] in one), "")
+    if not realtor:
+        r = CARD_RE["realtor"].search(one)
+        realtor = r.group(1) if r else ""
+    dn = CARD_RE["dong"].search(one)
+    no = CARD_RE["no"].search(card.get("href", "")) or None
+    return {
+        "atclNo": no.group(1) if no else "h" + hashlib.md5(one.encode("utf-8")).hexdigest()[:12],
+        "atclNm": "",
+        "tradTpNm": trade,
+        "bildNm": dn.group(1) if dn else "",
+        "flrInfo": f"{fl.group(1)}/{fl.group(2)}" if fl else "",
+        "spc2": area,
+        "prcInfo": price,
+        "rentPrc": rent,
+        "atclCfmYmd": date,
+        "rltrNm": realtor,
+    }
+
+
 class BrowserReader:
     def __init__(self, cfg, debug=False):
         self.cfg, self.debug = cfg, debug
@@ -447,7 +503,8 @@ class BrowserReader:
             raise RuntimeError("브라우저 모듈이 없습니다. setup.bat 을 다시 실행해 주세요. (pip install playwright)")
         self._pw = sync_playwright().start()
         opts = dict(user_data_dir=os.path.join(HERE, "browser_profile"),
-                    headless=not self.cfg.get("show_browser", False),
+                    headless=bool(self.cfg.get("headless", False)),
+                    args=[] if self.cfg.get("show_browser") or self.debug else ["--window-position=-32000,-32000"],
                     viewport={"width": 1400, "height": 1000}, locale="ko-KR")
         last = None
         tries = [{"executable_path": self.cfg["browser_path"]}] if self.cfg.get("browser_path") else []
@@ -471,7 +528,7 @@ class BrowserReader:
             self._pw.stop()
 
     def fetch(self, no, trade_types):
-        caught = []  # (도착순서, 매물목록)
+        caught, seq = [], [0]
 
         def on_response(resp):
             try:
@@ -482,27 +539,45 @@ class BrowserReader:
                 return
             lists = article_lists(data)
             if self.debug:
+                seq[0] += 1
                 os.makedirs(DEBUG_DIR, exist_ok=True)
-                with open(os.path.join(DEBUG_DIR, f"{no}_{len(caught):02d}_{'list' if lists else 'etc'}.json"), "w", encoding="utf-8") as fp:
+                with open(os.path.join(DEBUG_DIR, f"{no}_{seq[0]:02d}_{'list' if lists else 'etc'}.json"), "w", encoding="utf-8") as fp:
                     json.dump({"url": resp.url, "data": data}, fp, ensure_ascii=False, indent=1)
-            for lst in lists:
-                caught.append(lst)
+            caught.extend(lists)
 
+        url = FIN_URL.format(no=no) if "{no}" in FIN_URL else complex_map_url(no)
         self.page.on("response", on_response)
+        cards = []
         try:
-            self.page.goto(FIN_URL.format(no=no) if "{no}" in FIN_URL else complex_map_url(no), wait_until="domcontentloaded", timeout=45000)
-            self.page.wait_for_timeout(4000)
-            seen = -1
+            self.page.goto(url, wait_until="domcontentloaded", timeout=45000)
+            self.page.wait_for_timeout(5000)
+            # 매물 탭이 닫혀 있으면 눌러 본다
+            if not self.page.evaluate(CARDS_JS):
+                for label in ("매물", "단지 매물"):
+                    try:
+                        self.page.get_by_text(label, exact=True).first.click(timeout=3000)
+                        self.page.wait_for_timeout(3000)
+                        break
+                    except Exception:
+                        pass
+            last = (-1, -1)
             for _ in range(self.cfg.get("max_pages", 10)):
-                n = sum(len(x) for x in caught)
-                if n == seen:
+                cards = self.page.evaluate(CARDS_JS)
+                now_cnt = (sum(len(x) for x in caught), len(cards))
+                if now_cnt == last:
                     break
-                seen = n
+                last = now_cnt
                 self.page.evaluate(SCROLL_JS)
                 self.page.wait_for_timeout(2500)
+            cards = self.page.evaluate(CARDS_JS)
             if self.debug:
                 os.makedirs(DEBUG_DIR, exist_ok=True)
                 self.page.screenshot(path=os.path.join(DEBUG_DIR, f"{no}_screen.png"))
+                with open(os.path.join(DEBUG_DIR, f"{no}_page.txt"), "w", encoding="utf-8") as fp:
+                    fp.write(url + "\n\n=== 매물 카드 ===\n")
+                    for c in cards:
+                        fp.write(c["text"].replace("\n", " | ") + "  <" + (c.get("href") or "") + ">\n")
+                    fp.write("\n=== 화면 전체 글자 ===\n" + self.page.evaluate("() => document.body.innerText")[:20000])
         finally:
             self.page.remove_listener("response", on_response)
 
@@ -513,6 +588,15 @@ class BrowserReader:
                 if a["atclNo"] and a["atclNo"] not in seen_no:
                     seen_no.add(a["atclNo"])
                     items.append(a)
+        source = "데이터"
+        if not items and cards:  # 데이터 형식을 못 알아보면 화면 글자로 읽는다
+            source = "화면글자"
+            for c in cards:
+                a = card_to_legacy(c, self.cfg.get("my_office_names", []))
+                if a["atclNo"] not in seen_no:
+                    seen_no.add(a["atclNo"])
+                    items.append(a)
+        log(f"   ({source}에서 {len(items)}건 읽음, 화면 카드 {len(cards)}개)")
         want = set(trade_types)
         return [a for a in items if not a["tradTpNm"] or a["tradTpNm"] in want]
 
