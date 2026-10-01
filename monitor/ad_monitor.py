@@ -369,11 +369,11 @@ def pick(flat, *names, exclude=()):
     for n in names:
         for k in keys:
             last = k.rsplit(".", 1)[-1].lower()
-            if last == n and flat[k] not in (None, "", []) and not any(e in k.lower() for e in exclude):
+            if last == n and flat[k] not in (None, "", [], 0, "0") and not any(e in k.lower() for e in exclude):
                 return flat[k]
     for n in names:
         for k in keys:
-            if n in k.lower() and flat[k] not in (None, "", []) and not any(e in k.lower() for e in exclude):
+            if n in k.lower() and flat[k] not in (None, "", [], 0, "0") and not any(e in k.lower() for e in exclude):
                 return flat[k]
     return ""
 
@@ -409,7 +409,7 @@ def won(v):
     if not t.isdigit():
         return str(v or "")
     n = int(t)
-    if n >= 10 ** 7:  # 원 단위로 온 경우
+    if n >= 100000:  # 원 단위로 온 경우 (네이버페이 부동산은 원 단위)
         n //= 10000
     eok, man = divmod(n, 10000)
     return (f"{eok}억 {man:,}" if man else f"{eok}억") if eok else f"{man:,}"
@@ -435,7 +435,9 @@ def to_legacy(d):
         "bildNm": str(pick(f, "dongname", "buildingname", "bildnm", "buildingdong")),
         "flrInfo": str(floor),
         "spc2": str(pick(f, "exclusivespace", "exclusivearea", "spc2", "area2", "exclusiveareasize")),
-        "prcInfo": won(pick(f, "dealprice", "warrantyprice", "prcinfo", "dealorwarrantprc", "price", exclude=("rent",))),
+        "prcInfo": won(pick(f, "dealprice", "warrantyprice", "prcinfo", "dealorwarrantprc", "price", exclude=("rent",))
+                       if trade == "매매" else
+                       pick(f, "warrantyprice", "deposit", "depositprice", "dealorwarrantprc", "prcinfo", "price", exclude=("rent", "deal"))),
         "rentPrc": won(pick(f, "rentprice", "rentprc", "monthlyrent")),
         "atclCfmYmd": str(date),
         "rltrNm": str(pick(f, "brokeragename", "realtorname", "rltrnm", "brokername", "agentname", "officename")),
