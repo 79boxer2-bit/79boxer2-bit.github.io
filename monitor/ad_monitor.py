@@ -132,9 +132,72 @@ def load_config():
 
 # ---------------------------------------------------------------- 네이버 매물 읽기
 
+_LZ_KEY = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-$"
+
+
+def _lz_decompress(text):
+    """네이버페이 부동산 지도 주소의 layer= 값(LZString 압축)을 푼다."""
+    try:
+        vals = [_LZ_KEY.index(c) for c in text.replace(" ", "+")]
+    except ValueError:
+        return ""
+    st = {"pos": 32, "idx": 1, "val": vals[0] if vals else 0}
+
+    def bits(n):
+        r, p = 0, 1
+        for _ in range(n):
+            b = st["val"] & st["pos"]
+            st["pos"] >>= 1
+            if st["pos"] == 0:
+                st["pos"] = 32
+                st["val"] = vals[st["idx"]] if st["idx"] < len(vals) else 0
+                st["idx"] += 1
+            r |= (1 if b else 0) * p
+            p <<= 1
+        return r
+
+    d, enl, size, nb = {0: 0, 1: 1, 2: 2}, 4, 4, 3
+    n = bits(2)
+    if n == 2 or not vals:
+        return ""
+    w = chr(bits(8 if n == 0 else 16))
+    d[3] = w
+    out = [w]
+    while st["idx"] <= len(vals) + 1:
+        c = bits(nb)
+        if c in (0, 1):
+            d[size] = chr(bits(8 if c == 0 else 16))
+            size += 1
+            c = size - 1
+            enl -= 1
+        elif c == 2:
+            break
+        if enl == 0:
+            enl, nb = 2 ** nb, nb + 1
+        if c in d:
+            e = d[c]
+        elif c == size:
+            e = w + w[0]
+        else:
+            break
+        out.append(e)
+        d[size] = w + e[0]
+        size += 1
+        enl -= 1
+        w = e
+        if enl == 0:
+            enl, nb = 2 ** nb, nb + 1
+    return "".join(out)
+
+
 def complex_no(value):
-    """단지 번호 또는 네이버 부동산 단지 주소에서 단지 번호만 뽑는다."""
+    """단지 번호 또는 네이버 부동산 단지 주소(지도 주소 포함)에서 단지 번호만 뽑는다."""
     s = str(value)
+    layer = urllib.parse.parse_qs(urllib.parse.urlparse(s).query).get("layer", [""])[0]
+    if layer:
+        m = re.search(r'"complexId"\s*:\s*"?(\d+)', _lz_decompress(layer))
+        if m:
+            return m.group(1)
     m = re.search(r"complex(?:es)?/(?:info/)?(\d+)", s) or re.search(r"hscpNo=(\d+)", s) or re.fullmatch(r"\s*(\d+)\s*", s)
     return m.group(1) if m else ""
 
