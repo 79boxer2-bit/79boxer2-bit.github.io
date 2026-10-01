@@ -65,6 +65,15 @@ if not exist "%DEST%\ad_monitor.py" (
 echo [2/4] 설치 위치: %DEST%
 
 rem ---------- 3. 단지 주소 입력 ----------
+rem 예전 목록(단지 번호만 있는 것)은 지도 주소가 들어간 새 목록으로 바꾼다
+if exist "%DEST%\complexes.txt" (
+  findstr /c:"fin.land.naver.com/map" "%DEST%\complexes.txt" >nul 2>nul
+  if errorlevel 1 (
+    copy /Y "%DEST%\complexes.txt" "%DEST%\complexes.old.txt" >nul
+    copy /Y "%DEST%\complexes.example.txt" "%DEST%\complexes.txt" >nul
+    echo [3/4] 단지 목록을 네이버 지도 주소가 들어간 새 목록으로 바꿨습니다. ^(이전 목록: complexes.old.txt^)
+  )
+)
 if not exist "%DEST%\complexes.txt" (
   copy /Y "%DEST%\complexes.example.txt" "%DEST%\complexes.txt" >nul
   echo.
