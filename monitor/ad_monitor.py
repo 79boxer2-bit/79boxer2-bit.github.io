@@ -193,6 +193,78 @@ def _lz_decompress(text):
     return "".join(out)
 
 
+def _lz_compress(text):
+    """LZString.compressToEncodedURIComponent 와 같은 결과를 만든다."""
+    bits_per_char = 6
+    d, to_create, wc, w = {}, {}, "", ""
+    enl, size, nb = 2, 3, 2
+    out, val, pos = [], 0, 0
+
+    def write(value, n):
+        nonlocal val, pos
+        for _ in range(n):
+            val = (val << 1) | (value & 1)
+            if pos == bits_per_char - 1:
+                pos = 0
+                out.append(_LZ_KEY[val])
+                val = 0
+            else:
+                pos += 1
+            value >>= 1
+
+    def emit_w():
+        nonlocal enl, nb
+        if w in to_create:
+            if ord(w[0]) < 256:
+                write(0, nb)
+                write(ord(w[0]), 8)
+            else:
+                write(1, nb)
+                write(ord(w[0]), 16)
+            enl -= 1
+            if enl == 0:
+                enl, nb = 2 ** nb, nb + 1
+            del to_create[w]
+        else:
+            write(d[w], nb)
+        enl -= 1
+        if enl == 0:
+            enl, nb = 2 ** nb, nb + 1
+
+    for c in text:
+        if c not in d:
+            d[c] = size
+            size += 1
+            to_create[c] = True
+        wc = w + c
+        if wc in d:
+            w = wc
+        else:
+            emit_w()
+            d[wc] = size
+            size += 1
+            w = c
+    if w:
+        emit_w()
+    write(2, nb)
+    while True:
+        val <<= 1
+        if pos == bits_per_char - 1:
+            out.append(_LZ_KEY[val])
+            break
+        pos += 1
+    return "".join(out)
+
+
+def complex_map_url(no):
+    """단지 매물 창이 열린 네이버페이 부동산 지도 주소."""
+    layer = json.dumps([{"id": "complex_detail", "params": {"complexId": int(no)},
+                         "searchParams": {"tab": "article", "articleTradeTypes": "A1-B1-B2"},
+                         "returnable": True}], separators=(",", ":"), ensure_ascii=False)
+    return ("https://fin.land.naver.com/map?tradeTypes=A1-B1-B2&realEstateTypes=A01-A04-B01&layer="
+            + urllib.parse.quote(_lz_compress(layer), safe="-$"))
+
+
 def complex_no(value):
     """단지 번호 또는 네이버 부동산 단지 주소(지도 주소 포함)에서 단지 번호만 뽑는다."""
     s = str(value)
@@ -255,7 +327,7 @@ def fetch_complex(no, trade_types, max_pages, debug=False):
 # 예전 모바일 주소가 매물을 주지 않아, 사무실 PC의 엣지로 단지 화면을 열고
 # 화면이 받아오는 매물 데이터를 그대로 읽는다. 순서가 곧 화면 노출 순서.
 
-FIN_URL = "https://fin.land.naver.com/complexes/{no}?tab=article"
+FIN_URL = ""  # 비워 두면 지도 주소(complex_map_url)를 씀. 시험용으로만 바꿈
 TRADE_NAMES = {"A1": "매매", "B1": "전세", "B2": "월세", "B3": "단기임대"}
 
 
@@ -418,7 +490,7 @@ class BrowserReader:
 
         self.page.on("response", on_response)
         try:
-            self.page.goto(FIN_URL.format(no=no), wait_until="domcontentloaded", timeout=45000)
+            self.page.goto(FIN_URL.format(no=no) if "{no}" in FIN_URL else complex_map_url(no), wait_until="domcontentloaded", timeout=45000)
             self.page.wait_for_timeout(4000)
             seen = -1
             for _ in range(self.cfg.get("max_pages", 10)):
