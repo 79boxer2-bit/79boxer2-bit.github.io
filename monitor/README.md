@@ -28,12 +28,11 @@
 2. 압축을 풀고 `monitor` 폴더를 `C:\하늘광고감시` 처럼 찾기 쉬운 곳에 복사합니다.
 
 ### 3단계. 단지 주소 넣기
-1. `config.example.json` 을 복사해서 이름을 **`config.json`** 으로 바꿉니다.
-2. 메모장으로 `config.json` 을 엽니다.
-3. 네이버 부동산에서 단지를 하나씩 검색해 단지 화면을 열고, **주소창의 주소를 복사**해서 해당 단지의 `"url": ""` 따옴표 안에 붙여 넣습니다.
-   - 예: `"url": "https://new.land.naver.com/complexes/12345"`
-   - 모바일 주소(`m.land.naver.com/complex/info/12345`)도 됩니다. 숫자만 넣어도 됩니다.
-4. 저장합니다.
+1. `complexes.example.txt` 를 복사해서 이름을 **`complexes.txt`** 로 바꾸고 메모장으로 엽니다.
+2. 단지 이름 뒤에 한 칸 띄우고, 네이버 부동산 단지 화면의 **주소창 주소**를 붙여 넣습니다.
+   - 예: `시티프라디움1차 https://new.land.naver.com/complexes/12345`
+   - 모바일 주소(`m.land.naver.com/complex/info/12345`)나 숫자만 넣어도 됩니다.
+3. 저장합니다. (카카오 설정만 `config.json` 에 넣습니다.)
 
 ### 4단계. 테스트
 `monitor` 폴더 주소창에 `cmd` 라고 치고 Enter → 까만 창에서:

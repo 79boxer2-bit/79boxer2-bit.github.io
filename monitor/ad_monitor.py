@@ -29,6 +29,7 @@ import webbrowser
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = os.path.join(HERE, "config.json")
+COMPLEX_TXT = os.path.join(HERE, "complexes.txt")
 STATE_PATH = os.path.join(HERE, "state.json")
 TOKEN_PATH = os.path.join(HERE, "kakao_token.json")
 LOG_PATH = os.path.join(HERE, "monitor.log")
@@ -75,10 +76,57 @@ def save_json(path, obj):
     os.replace(tmp, path)
 
 
+DEFAULT_CONFIG = {
+    "my_office_names": ["하늘공인중개사"],
+    "hours": [10, 18],
+    "trade_types": ["매매", "전세", "월세"],
+    "max_pages": 10,
+    "max_alerts_per_day": 20,
+    "complexes": [],
+    "kakao": {"rest_api_key": "", "client_secret": "", "redirect_uri": "https://localhost"},
+}
+
+
+def load_complexes_txt():
+    """complexes.txt: 한 줄에 '단지이름 네이버부동산주소'. # 으로 시작하는 줄은 설명."""
+    out = []
+    try:
+        with open(COMPLEX_TXT, encoding="utf-8-sig") as f:
+            lines = f.read().splitlines()
+    except FileNotFoundError:
+        return None
+    except UnicodeDecodeError:  # 메모장에서 ANSI 로 저장한 경우
+        with open(COMPLEX_TXT, encoding="cp949", errors="replace") as f:
+            lines = f.read().splitlines()
+    for line in lines:
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        m = re.search(r"https?://\S+|\b\d{3,}\b", line)
+        name = (line[:m.start()] if m else line).strip(" :=,\t") or "이름없음"
+        out.append({"name": name, "url": m.group(0) if m else ""})
+    return out
+
+
 def load_config():
-    cfg = load_json(CONFIG_PATH, None)
-    if cfg is None:
-        sys.exit("config.json 이 없습니다. config.example.json 을 복사해서 config.json 으로 이름을 바꾸고 단지 주소를 채워 주세요.")
+    cfg = json.loads(json.dumps(DEFAULT_CONFIG))
+    try:
+        user = load_json(CONFIG_PATH, {})
+    except (json.JSONDecodeError, UnicodeDecodeError) as e:
+        bad = CONFIG_PATH.replace(".json", ".broken.json")
+        os.replace(CONFIG_PATH, bad)
+        log(f"config.json 형식이 깨져 있어 {os.path.basename(bad)} 로 옮기고 기본 설정을 씁니다. ({e})")
+        user = {}
+    for k, v in user.items():
+        if k == "kakao" and isinstance(v, dict):
+            cfg["kakao"].update(v)
+        else:
+            cfg[k] = v
+    txt = load_complexes_txt()
+    if txt is not None:
+        cfg["complexes"] = txt
+    if not cfg["complexes"]:
+        sys.exit("감시할 단지가 없습니다. complexes.txt 에 '단지이름 네이버부동산주소' 를 한 줄에 하나씩 적어 주세요.")
     return cfg
 
 
@@ -314,7 +362,7 @@ def check(cfg, state, dry=False, only_first=False):
         no = complex_no(c.get("url") or c.get("no"))
         name = c.get("name", no)
         if not no:
-            log(f"[{name}] 단지 번호가 없습니다. config.json 에 네이버 부동산 단지 주소를 넣어 주세요.")
+            log(f"[{name}] 단지 번호가 없습니다. complexes.txt 에 네이버 부동산 단지 주소를 넣어 주세요.")
             continue
         try:
             raw = fetch_complex(no, trades, cfg.get("max_pages", 10), debug=only_first)

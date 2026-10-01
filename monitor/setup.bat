@@ -45,6 +45,7 @@ rem 설정·기록 파일은 덮어쓰지 않고 프로그램 파일만 갱신
 for /d %%R in ("%TMPDIR%\*") do (
   copy /Y "%%R\monitor\ad_monitor.py" "%DEST%\" >nul
   copy /Y "%%R\monitor\config.example.json" "%DEST%\" >nul
+  copy /Y "%%R\monitor\complexes.example.txt" "%DEST%\" >nul
   copy /Y "%%R\monitor\README.md" "%DEST%\" >nul
   copy /Y "%%R\monitor\uninstall_task.bat" "%DEST%\" >nul
   copy /Y "%%R\monitor\setup.bat" "%DEST%\" >nul
@@ -57,18 +58,18 @@ if not exist "%DEST%\ad_monitor.py" (
 echo [2/4] 설치 위치: %DEST%
 
 rem ---------- 3. 단지 주소 입력 ----------
-if not exist "%DEST%\config.json" (
-  copy /Y "%DEST%\config.example.json" "%DEST%\config.json" >nul
+if not exist "%DEST%\complexes.txt" (
+  copy /Y "%DEST%\complexes.example.txt" "%DEST%\complexes.txt" >nul
   echo.
   echo [3/4] 메모장이 열립니다.
-  echo       네이버 부동산에서 각 단지 화면을 열고, 주소창 주소를 복사해서
-  echo       해당 단지의 "url": "" 따옴표 안에 붙여 넣으세요.
+  echo       단지 이름 뒤에 한 칸 띄우고, 네이버 부동산 단지 화면의 주소를 붙여 넣으세요.
+  echo       예^) 시티프라디움1차 https://new.land.naver.com/complexes/12345
   echo       다 넣었으면 저장^(Ctrl+S^)하고 메모장을 닫으세요.
   echo.
   pause
-  start /wait notepad "%DEST%\config.json"
+  start /wait notepad "%DEST%\complexes.txt"
 ) else (
-  echo [3/4] 기존 설정^(config.json^)을 그대로 사용합니다.
+  echo [3/4] 기존 단지 목록^(complexes.txt^)을 그대로 사용합니다. 고치려면 메모장으로 여세요.
 )
 
 rem ---------- 4. 테스트 + 자동 실행 등록 ----------
