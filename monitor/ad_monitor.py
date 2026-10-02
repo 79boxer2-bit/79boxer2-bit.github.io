@@ -627,13 +627,21 @@ class BrowserReader:
                 self.last_groups = []
                 names = [x[:4] for x in self.cfg.get("my_office_names", []) if x]
                 n_dup = self.page.evaluate(DUP_JS, names)
+                if n_dup:
+                    log(f"   같은 집 묶음 {n_dup}개를 펼쳐 확인합니다...")
                 for i in range(n_dup):
+                    if i and i % 10 == 0:
+                        log(f"   ... {i}/{n_dup}")
                     before = len(caught)
                     try:
                         el = self.page.locator(f'[data-hn-dup="{i}"]').first
                         el.scroll_into_view_if_needed(timeout=3000)
                         el.click(timeout=3000)
-                        self.page.wait_for_timeout(1500)
+                        # 응답이 오면 바로 다음으로 (최대 2초)
+                        for _ in range(10):
+                            self.page.wait_for_timeout(200)
+                            if len(caught) > before:
+                                break
                     except Exception:
                         continue
                     got = [d for lst in caught[before:] for d in lst]
@@ -990,6 +998,7 @@ def _check_complexes(cfg, state, complexes, reader, names, trades, today, day, a
         if not no:
             log(f"[{name}] 단지 번호가 없습니다. complexes.txt 에 네이버 부동산 단지 주소를 넣어 주세요.")
             continue
+        log(f"[{name}] 읽는 중...")
         try:
             raw = reader.fetch(no, trades, c.get("url", "")) if reader else fetch_complex(no, trades, cfg.get("max_pages", 10), debug=only_first)
         except Exception as e:
