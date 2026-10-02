@@ -28,7 +28,7 @@ import urllib.parse
 import urllib.request
 import webbrowser
 
-VERSION = "2026-10-02f"
+VERSION = "2026-10-02g"
 HERE = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = os.path.join(HERE, "config.json")
 COMPLEX_TXT = os.path.join(HERE, "complexes.txt")
@@ -1119,23 +1119,50 @@ def short_realtor(name):
     return t or str(name or "")
 
 
+def short_price(text):
+    """'매매 4억 2,000' -> '매매 4.2억', '월세 3,000/110' -> '월세 3천/110' (카톡에서 짧게)."""
+    def eok(m):
+        e, man = int(m.group(1)), int((m.group(2) or "0").replace(",", ""))
+        if not man:
+            return f"{e}억"
+        return f"{e}.{man // 1000}억" if man % 1000 == 0 else f"{e}억{man:,}"
+    text = re.sub(r"(\d+)억\s?(\d{1,3}(?:,\d{3})*)?", eok, text)
+    return re.sub(r"(?<![\d,.])(\d)(,000)(?=/|$|\s)", r"\1천", text)
+
+
+def pack_messages(title, blocks, limit=180):
+    """블록(매물 하나)이 중간에 잘리지 않게 카톡 한 통(200자)씩 묶는다. 단지 이름은 통마다 다시 적는다."""
+    msgs, cur, cur_cx = [], [], None
+    for cx, body in blocks:
+        add = ([f"■ {cx}"] if cx != cur_cx else []) + body
+        if cur and len("\n".join([title] + cur + add)) + 8 > limit:
+            msgs.append(cur)
+            cur, cur_cx = [], None
+            add = [f"■ {cx}"] + body
+        cur += add
+        cur_cx = cx
+    if cur:
+        msgs.append(cur)
+    n = len(msgs)
+    return ["\n".join([title + (f" ({i}/{n})" if n > 1 else "")] + m) for i, m in enumerate(msgs, 1)]
+
+
 def send_digest(cfg, out, dry=False):
-    """이번 점검 결과를 카톡 한 통(길면 200자씩 나눠서)으로 보낸다."""
-    lines = []
-    if out["behind"]:
-        lines.append(f"[광고 밀림 {len(out['behind'])}건] {now():%m/%d %H:%M}")
-        for i, b in enumerate(out["behind"], 1):
-            lines.append(f"{i}) {b['where']}")
-            lines.append(f"   {b['price']} · {b['rival']} {b['rival_date']} (우리 {b['my_date']})")
-        lines.append("→ 이실장 재광고 검토")
-    if out["readded"]:
-        if lines:
-            lines.append("")
-        lines.append(f"[재광고 확인 {len(out['readded'])}건] 직방도 갱신하세요")
-        for r in out["readded"]:
-            lines.append(f"- {r}")
-    if lines:
-        notify(cfg, "\n".join(lines), "https://fin.land.naver.com", dry)
+    """네이버 밀림만 단지별로 묶어 보기 좋게 보낸다. 매물 하나가 두 통으로 쪼개지지 않게 나눈다."""
+    if not out["behind"]:
+        return
+    items = sorted(out["behind"], key=lambda b: b.get("complex", ""))
+    blocks = []
+    for b in items:
+        blocks.append((b.get("complex", ""), [
+            f"· {b.get('spot', b['where'])} {short_price(b['price'])}",
+            f"  {b['rival']} {b['rival_date']} ▶ 우리 {b['my_date']}",
+        ]))
+    title = f"[네이버 광고 밀림 {len(items)}건] {now():%m/%d %H:%M}"
+    msgs = pack_messages(title, blocks)
+    msgs[-1] += "\n→ 이실장 재광고 검토"
+    for m in msgs:
+        notify(cfg, m, "https://fin.land.naver.com", dry)
 
 
 def _check_complexes(cfg, state, complexes, reader, names, trades, today, day, alerted, my_dates, dry, only_first, out):
@@ -1166,11 +1193,11 @@ def _check_complexes(cfg, state, complexes, reader, names, trades, today, day, a
             me = g[0]
             latest = max((x["date"] for x in g if x["date"]), default=None)
             gkey = f"{name}|{me['trade']}|{me['dong']}|{me['floor'] or me['band']}|{me['area']:.0f}"
-            # 재광고 감지: 같은 매물의 우리 최신 확인일자가 올라가면 직방 갱신 알림
+            # 재광고 감지: 같은 매물의 우리 최신 확인일자가 올라가면 기록만 남김(직방 알림은 끔)
             prev = my_dates.get(gkey)
             if latest and prev and latest.isoformat() > prev:
                 day["readded"].append(gkey)
-                out["readded"].append(f"{name} {me['dong']}동 {me['flr_text']} {me['trade']} {me['price']}")
+                log(f"   재광고 확인: {name} {me['dong']}동 {me['flr_text']} {me['trade']} {me['price']}")
             if latest:
                 my_dates[gkey] = latest.isoformat()
             if top is None:
@@ -1188,6 +1215,7 @@ def _check_complexes(cfg, state, complexes, reader, names, trades, today, day, a
             new_alerts += 1
             out["behind"].append({
                 "where": f"{name} {me['dong']}동 {me['flr_text']}",
+                "complex": name, "spot": f"{me['dong']}동 {me['flr_text']}",
                 "price": f"{me['trade']} {me['price']}",
                 "rival": short_realtor(top["realtor"]), "rival_date": d_top, "my_date": d_me,
             })
@@ -1243,12 +1271,10 @@ def summary(cfg, state, dry=False):
     today = now().date().isoformat()
     day = state.get("days", {}).get(today, {"alerts": 0, "readded": [], "behind": {}})
     behind = list(day.get("behind", {}).values())
-    lines = [f"[오늘 요약 {now():%m/%d}] 알림 {day.get('alerts', 0)} · 재광고 {len(day.get('readded', []))} · 아직 밀림 {len(behind)}"]
+    lines = [f"[오늘 요약 {now():%m/%d}] 알림 {day.get('alerts', 0)}건 · 아직 밀림 {len(behind)}건"]
     lines += [f"- {b}" for b in behind[:10]]
     if len(behind) > 10:
         lines.append(f"외 {len(behind) - 10}건")
-    if day.get("readded"):
-        lines.append("※ 오늘 재광고한 매물은 직방도 갱신했는지 확인하세요")
     notify(cfg, "\n".join(lines), dry=dry)
     state.setdefault("summary_sent", {})[today] = True
 
