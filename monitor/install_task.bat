@@ -12,12 +12,12 @@ if not defined PYW (
   exit /b 1
 )
 
-rem 30분마다 실행. 오전 10시~저녁 6시 밖에서는 프로그램이 스스로 바로 종료합니다.
-schtasks /Create /F /TN "HaneulAdMonitor" /SC MINUTE /MO 30 /TR "\"%PYW%\" \"%~dp0ad_monitor.py\""
+rem 매일 오전 11시, 오후 2시, 오후 5시 (3시간마다 하루 3번) 실행합니다.
+schtasks /Create /F /TN "HaneulAdMonitor" /SC DAILY /ST 11:00 /RI 180 /DU 0006:30 /TR "\"%PYW%\" \"%~dp0ad_monitor.py\""
 if errorlevel 1 (
   echo 예약 등록에 실패했습니다. 이 파일을 마우스 오른쪽 버튼 - 관리자 권한으로 실행해 보세요.
 ) else (
-  echo 등록 완료: 30분마다 광고 감시가 실행됩니다. 기록은 monitor.log 에 쌓입니다.
+  echo 등록 완료: 매일 11시·14시·17시에 광고 감시가 실행됩니다. 기록은 monitor.log 에 쌓입니다.
   echo 끄려면 uninstall_task.bat 을 실행하세요.
 )
 pause

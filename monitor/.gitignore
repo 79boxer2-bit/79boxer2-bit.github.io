@@ -5,3 +5,4 @@ monitor.log
 debug/
 *.tmp
 browser_profile/
+__pycache__/
