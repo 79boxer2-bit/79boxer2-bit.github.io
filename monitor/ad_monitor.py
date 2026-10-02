@@ -28,7 +28,7 @@ import urllib.parse
 import urllib.request
 import webbrowser
 
-VERSION = "2026-10-02c"
+VERSION = "2026-10-02d"
 HERE = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = os.path.join(HERE, "config.json")
 COMPLEX_TXT = os.path.join(HERE, "complexes.txt")
@@ -490,8 +490,15 @@ def card_to_legacy(card, my_names):
     if trade not in ("월세", "단기임대"):
         rent = ""
     fl = CARD_RE["floor"].search(one)
+    ex = re.search(r"전용\s*(\d+(?:\.\d+)?)", one)
     ar = CARD_RE["area2"].search(one)
-    area = ar.group(2) if ar else (CARD_RE["area1"].search(one).group(1) if CARD_RE["area1"].search(one) else "")
+    if ex:
+        area = ex.group(1)
+    elif ar:
+        area = ar.group(2)
+    else:
+        a1 = CARD_RE["area1"].search(one)
+        area = a1.group(1) if a1 else ""
     dates = CARD_RE["date"].findall(one)
     date = "".join(f"{int(y) % 100:02d}{int(mo):02d}{int(d):02d}" for y, mo, d in dates[-1:])
     realtor = next((n for n in my_names if n and n[:2] in one), "")
@@ -532,6 +539,35 @@ DUP_JS = """(names) => {
   }
   return n;
 }"""
+
+
+CARD_TEXT_JS = """(i) => {
+  const el = document.querySelector(`[data-hn-dup="${i}"]`);
+  let c = el;
+  for (let k = 0; k < 8 && c; k++) {
+    c = c.parentElement;
+    if (c && /(매매|전세|월세)/.test(c.innerText) && /(㎡|층)/.test(c.innerText)) break;
+  }
+  return c ? c.innerText : '';
+}"""
+
+MEMBER_RE = re.compile(
+    r"확인매물\s*(\d{4}\.\d{1,2}\.\d{1,2})\.?[^\n]*\n(?:[^\n]*\n){0,3}?\s*([^\n|]{2,40}?)\s*\|\s*([^\n]{1,20})")
+
+
+def group_from_text(collapsed, expanded, my_names):
+    """펼친 묶음 화면 글자 -> 같은 집 광고 목록 (첫 번째가 대표)."""
+    head = card_to_legacy({"text": collapsed, "href": ""}, my_names)
+    body = expanded.split("등록했어요", 1)[-1] if "등록했어요" in expanded else expanded
+    members = []
+    for date, broker, cp in MEMBER_RE.findall(body):
+        broker = broker.strip()
+        d = dict(head)
+        d.update({"rltrNm": broker, "atclCfmYmd": date,
+                  "atclNo": "g" + hashlib.md5(f"{collapsed[:80]}|{broker}|{cp}|{date}".encode("utf-8")).hexdigest()[:12],
+                  "isRep": not members})
+        members.append(d)
+    return members
 
 
 class BrowserReader:
@@ -651,6 +687,7 @@ class BrowserReader:
                     try:
                         el = self.page.locator(f'[data-hn-dup="{i}"]').first
                         el.scroll_into_view_if_needed(timeout=3000)
+                        collapsed = self.page.evaluate(CARD_TEXT_JS, i)
                         el.click(timeout=3000)
                         # 응답이 오면 바로 다음으로 (최대 2초)
                         for _ in range(10):
@@ -681,6 +718,17 @@ class BrowserReader:
                                 "if (c && /(매매|전세|월세)/.test(c.innerText) && /(㎡|층)/.test(c.innerText)) break; } "
                                 "return c ? c.innerText.slice(0, 1500) : '(못 찾음)'; }", i) + "\n\n")
                     got = [d for lst in caught[before:] for d in lst]
+                    if not got:  # 데이터로 못 받으면 펼쳐진 화면 글자로 읽는다
+                        expanded = ""
+                        for _ in range(10):
+                            expanded = self.page.evaluate(CARD_TEXT_JS, i)
+                            if expanded.count("|") >= 2:
+                                break
+                            self.page.wait_for_timeout(200)
+                        members = group_from_text(collapsed, expanded, self.cfg.get("my_office_names", []))
+                        if members:
+                            self.last_groups.append(members)
+                        continue
                     if got:
                         self.last_groups.append([to_legacy(d) for d in got])
                         if self.debug and len(self.last_groups) == 1:
@@ -783,6 +831,7 @@ def norm(a, complex_name, rank):
         "date": parse_date(a.get("atclCfmYmd") or a.get("cfmYmd")),
         "realtor": str(a.get("rltrNm") or a.get("realtorName") or ""),
         "flr_text": str(a.get("flrInfo", "")),
+        "rep": bool(a.get("isRep")),
     }
 
 
@@ -1092,7 +1141,7 @@ def _check_complexes(cfg, state, complexes, reader, names, trades, today, day, a
                 if not ours:
                     continue
                 nos = {x["no"] for x in members}
-                rep = next((x for x in arts if x["no"] in nos), None)
+                rep = next((x for x in members if x.get("rep")), None) or next((x for x in arts if x["no"] in nos), None)
                 if rep is None:
                     others = [x for x in members if not is_mine(x, names)]
                     rep = max(others, key=lambda o: o["date"] or datetime.date.min) if others else None
