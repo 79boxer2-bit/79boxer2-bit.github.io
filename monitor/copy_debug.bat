@@ -4,7 +4,8 @@ setlocal
 title Haneul Copy Debug
 cd /d "%~dp0"
 set "F="
-for %%X in ("debug\*_fields.txt") do if not defined F set "F=%%X"
+for %%X in ("debug\*_click.txt") do if not defined F set "F=%%X"
+if not defined F for %%X in ("debug\*_fields.txt") do if not defined F set "F=%%X"
 if not defined F (
   echo 분석 파일이 아직 없습니다. setup.bat 을 먼저 끝까지 실행한 뒤 다시 실행하세요.
   pause

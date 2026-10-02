@@ -573,6 +573,11 @@ class BrowserReader:
     def fetch(self, no, trade_types, page_url=""):
         caught, seq = [], [0]
         self.last_groups = None
+        if self.debug:
+            try:
+                os.remove(os.path.join(DEBUG_DIR, f"{no}_click.txt"))
+            except OSError:
+                pass
 
         def on_response(resp):
             try:
@@ -596,6 +601,11 @@ class BrowserReader:
         else:
             url = complex_map_url(no)
         self.page.on("response", on_response)
+        all_resp = []
+
+        def on_any(resp):
+            all_resp.append(resp)
+        self.page.on("response", on_any)
         cards = []
         try:
             self.page.goto(url, wait_until="domcontentloaded", timeout=45000)
@@ -632,7 +642,11 @@ class BrowserReader:
                 for i in range(n_dup):
                     if i and i % 10 == 0:
                         log(f"   ... {i}/{n_dup}")
+                    if i >= 3 and not self.last_groups:
+                        log("   묶음 내용을 읽지 못해 나머지는 건너뜁니다.")
+                        break
                     before = len(caught)
+                    before_any = len(all_resp)
                     try:
                         el = self.page.locator(f'[data-hn-dup="{i}"]').first
                         el.scroll_into_view_if_needed(timeout=3000)
@@ -644,6 +658,27 @@ class BrowserReader:
                                 break
                     except Exception:
                         continue
+                    if self.debug and i < 2:
+                        self.page.wait_for_timeout(1500)
+                        os.makedirs(DEBUG_DIR, exist_ok=True)
+                        self.page.screenshot(path=os.path.join(DEBUG_DIR, f"{no}_click{i}.png"))
+                        with open(os.path.join(DEBUG_DIR, f"{no}_click.txt"), "a", encoding="utf-8") as fp:
+                            fp.write(f"===== 묶음 {i + 1} 누른 뒤 =====\n")
+                            fp.write("화면 주소: " + self.page.url + "\n")
+                            for r in all_resp[before_any:]:
+                                try:
+                                    ct = r.headers.get("content-type", "")
+                                    body = r.text()[:400] if ("json" in ct or "text" in ct) else ""
+                                except Exception:
+                                    ct, body = "?", ""
+                                fp.write(f"- {r.request.method} {r.status} {ct[:30]} {r.url[:200]}\n")
+                                if body:
+                                    fp.write("  " + body.replace("\n", " ") + "\n")
+                            fp.write("\n카드 글자:\n" + self.page.evaluate(
+                                "(i) => { const el = document.querySelector(`[data-hn-dup=\"${i}\"]`); "
+                                "let c = el; for (let k = 0; k < 8 && c; k++) { c = c.parentElement; "
+                                "if (c && /(매매|전세|월세)/.test(c.innerText) && /(㎡|층)/.test(c.innerText)) break; } "
+                                "return c ? c.innerText.slice(0, 1500) : '(못 찾음)'; }", i) + "\n\n")
                     got = [d for lst in caught[before:] for d in lst]
                     if got:
                         self.last_groups.append([to_legacy(d) for d in got])
@@ -668,6 +703,7 @@ class BrowserReader:
                     fp.write("\n=== 화면 전체 글자 ===\n" + self.page.evaluate("() => document.body.innerText")[:20000])
         finally:
             self.page.remove_listener("response", on_response)
+            self.page.remove_listener("response", on_any)
 
         items, seen_no = [], set()
         for lst in caught:
