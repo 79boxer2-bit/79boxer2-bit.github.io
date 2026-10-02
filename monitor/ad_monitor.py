@@ -441,6 +441,7 @@ def to_legacy(d):
         "rentPrc": won(pick(f, "rentprice", "rentprc", "monthlyrent")),
         "atclCfmYmd": str(date),
         "rltrNm": str(pick(f, "brokeragename", "realtorname", "rltrnm", "brokername", "agentname", "officename")),
+        "dupCount": int(pick(f, "realtorcount") or 1),
     }
 
 
@@ -512,6 +513,26 @@ def card_to_legacy(card, my_names):
     }
 
 
+# '중개사 N곳에서 등록했어요' 버튼 중, 대표 광고가 우리 것이 아닌 묶음에만 표시를 붙인다
+DUP_JS = """(names) => {
+  const isBtn = el => /중개사\\s*\\d+\\s*곳/.test(el.innerText || '') && (el.innerText || '').length < 40;
+  const all = [...document.querySelectorAll('button, a, div, span, p')].filter(isBtn);
+  const leaf = all.filter(el => !all.some(o => o !== el && el.contains(o)));
+  let n = 0;
+  for (const el of leaf) {
+    let card = el, ok = false;
+    for (let i = 0; i < 8 && card; i++) {
+      card = card.parentElement;
+      if (card && /(매매|전세|월세)/.test(card.innerText) && /(㎡|층)/.test(card.innerText)) { ok = true; break; }
+    }
+    if (!ok) continue;
+    if (names.some(nm => nm && card.innerText.includes(nm))) continue;
+    el.setAttribute('data-hn-dup', String(n++));
+  }
+  return n;
+}"""
+
+
 class BrowserReader:
     def __init__(self, cfg, debug=False):
         self.cfg, self.debug = cfg, debug
@@ -551,6 +572,7 @@ class BrowserReader:
 
     def fetch(self, no, trade_types, page_url=""):
         caught, seq = [], [0]
+        self.last_groups = None
 
         def on_response(resp):
             try:
@@ -599,6 +621,35 @@ class BrowserReader:
                 self.page.evaluate(SCROLL_JS)
                 self.page.wait_for_timeout(2500)
             cards = self.page.evaluate(CARDS_JS)
+            main_n = len(caught)
+            self.last_groups = None
+            if self.cfg.get("expand_groups", True) and "{no}" not in FIN_URL:
+                self.last_groups = []
+                names = [x[:4] for x in self.cfg.get("my_office_names", []) if x]
+                n_dup = self.page.evaluate(DUP_JS, names)
+                for i in range(n_dup):
+                    before = len(caught)
+                    try:
+                        el = self.page.locator(f'[data-hn-dup="{i}"]').first
+                        el.scroll_into_view_if_needed(timeout=3000)
+                        el.click(timeout=3000)
+                        self.page.wait_for_timeout(1500)
+                    except Exception:
+                        continue
+                    got = [d for lst in caught[before:] for d in lst]
+                    if got:
+                        self.last_groups.append([to_legacy(d) for d in got])
+                        if self.debug and len(self.last_groups) == 1:
+                            os.makedirs(DEBUG_DIR, exist_ok=True)
+                            with open(os.path.join(DEBUG_DIR, f"{no}_group_fields.txt"), "w", encoding="utf-8") as fp:
+                                for d in got[:4]:
+                                    for k, v in flatten(d).items():
+                                        fp.write(f"{k} = {str(v)[:60]}\n")
+                                    fp.write("\n" + "-" * 40 + "\n\n")
+                log(f"   (다른 부동산이 대표인 묶음 {n_dup}개 펼침, 읽은 묶음 {len(self.last_groups)}개)")
+                if n_dup and not self.last_groups:
+                    self.last_groups = None  # 펼친 내용을 못 읽으면 예비 방식으로
+            caught = caught[:main_n]
             if self.debug:
                 os.makedirs(DEBUG_DIR, exist_ok=True)
                 self.page.screenshot(path=os.path.join(DEBUG_DIR, f"{no}_screen.png"))
@@ -952,18 +1003,10 @@ def _check_complexes(cfg, state, complexes, reader, names, trades, today, day, a
             for a in arts[:5]:
                 log(f"   {a['rank']:>3}위 {a['trade']} {a['dong']}동 {a['flr_text']} {a['area']}㎡ {a['price']} {a['date']} {a['realtor']}")
 
-        # 같은 집에 대한 우리 광고(이실장플러스·매경 등 여러 정보사)를 하나로 묶는다
-        groups = []
-        for m in sorted(mine, key=lambda x: x["rank"]):
-            for g in groups:
-                if same_listing(g[0], m) or same_listing(m, g[0]):
-                    g.append(m)
-                    break
-            else:
-                groups.append([m])
-
-        for g in groups:
-            me = g[0]  # 우리 광고 중 가장 위에 노출된 것
+        def handle(g, top):
+            """g: 같은 집에 대한 우리 광고들, top: 우리보다 위에 보이는 다른 부동산 광고(없으면 None)"""
+            nonlocal new_alerts
+            me = g[0]
             latest = max((x["date"] for x in g if x["date"]), default=None)
             gkey = f"{name}|{me['trade']}|{me['dong']}|{me['floor'] or me['band']}|{me['area']:.0f}"
             # 재광고 감지: 같은 매물의 우리 최신 확인일자가 올라가면 직방 갱신 알림
@@ -973,37 +1016,63 @@ def _check_complexes(cfg, state, complexes, reader, names, trades, today, day, a
                 out["readded"].append(f"{name} {me['dong']}동 {me['flr_text']} {me['trade']} {me['price']}")
             if latest:
                 my_dates[gkey] = latest.isoformat()
-
-            strict = not cfg.get("loose_floor_match", False)
-            rivals = [o for o in arts if not is_mine(o, names) and any(same_listing(x, o, strict) for x in g)]
-            newer = [o for o in rivals if o["date"] and latest and o["date"] > latest]
-            if cfg.get("alert_rule", "date") == "date":  # 다른 부동산 확인일자가 우리보다 최신일 때만
-                above = newer
-            else:
-                above = newer + [o for o in rivals if o["rank"] < me["rank"] and o not in newer]
-            if not above:
+            if top is None:
                 day["behind"].pop(gkey, None)
-                continue
-            top = max(above, key=lambda o: (o["date"] or datetime.date.min, -o["rank"]))
+                return
             d_me = f"{latest:%m/%d}" if latest else "?"
             d_top = f"{top['date']:%m/%d}" if top["date"] else "?"
             day["behind"][gkey] = f"{name} {me['dong']}동 {me['flr_text']} {me['trade']} {me['price']} ({short_realtor(top['realtor'])} {d_top} > 우리 {d_me})"
-
             # 같은 경쟁 광고·같은 확인일자로는 한 번만 알림 (비용 드는 재광고를 부추기지 않도록)
             akey = f"{gkey}>{top['no']}@{top['date']}"
-            if akey in alerted:
-                continue
-            if day["alerts"] >= cfg.get("max_alerts_per_day", 20):
-                continue
+            if akey in alerted or day["alerts"] >= cfg.get("max_alerts_per_day", 20):
+                return
             alerted[akey] = today
             day["alerts"] += 1
             new_alerts += 1
             out["behind"].append({
                 "where": f"{name} {me['dong']}동 {me['flr_text']}",
-                "price": f"{me['trade']} {me['price']}" + ("" if top["price"] == me["price"] else f"(상대 {top['price']})"),
+                "price": f"{me['trade']} {me['price']}",
                 "rival": short_realtor(top["realtor"]), "rival_date": d_top, "my_date": d_me,
             })
-            log(f"   밀림: {name} {me['dong']}동 {me['flr_text']} {me['trade']} {me['price']} - {top['realtor']} {d_top} / 우리 {d_me} (광고 {len(g)}건)")
+            log(f"   밀림: {name} {me['dong']}동 {me['flr_text']} {me['trade']} {me['price']} - {top['realtor']} {d_top} / 우리 {d_me} (우리 광고 {len(g)}건)")
+
+        naver_groups = getattr(reader, "last_groups", None) if reader else None
+        if naver_groups is not None:
+            # 네이버가 묶어 둔 '같은 집' 묶음 기준: 우리 광고가 들어 있는데 대표(맨 위)가 다른 부동산이면 밀림
+            done = set()
+            for gm in naver_groups:
+                members = [norm(x, name, 0) for x in gm]
+                ours = [x for x in members if is_mine(x, names)]
+                if not ours:
+                    continue
+                nos = {x["no"] for x in members}
+                rep = next((x for x in arts if x["no"] in nos), None)
+                if rep is None:
+                    others = [x for x in members if not is_mine(x, names)]
+                    rep = max(others, key=lambda o: o["date"] or datetime.date.min) if others else None
+                if rep is not None and is_mine(rep, names):
+                    rep = None
+                handle(sorted(ours, key=lambda x: x["date"] or datetime.date.min, reverse=True), rep)
+                done |= {x["no"] for x in ours}
+            for m in mine:  # 우리가 대표인 묶음 = 밀리지 않음 (재광고 기록만)
+                if m["no"] not in done:
+                    handle([m], None)
+        else:
+            # 예비 방식: 층·면적·가격으로 같은 집을 추정
+            groups = []
+            for m in sorted(mine, key=lambda x: x["rank"]):
+                for g in groups:
+                    if same_listing(g[0], m) or same_listing(m, g[0]):
+                        g.append(m)
+                        break
+                else:
+                    groups.append([m])
+            strict = not cfg.get("loose_floor_match", False)
+            for g in groups:
+                latest = max((x["date"] for x in g if x["date"]), default=None)
+                rivals = [o for o in arts if not is_mine(o, names) and any(same_listing(x, o, strict) for x in g)]
+                newer = [o for o in rivals if o["date"] and latest and o["date"] > latest]
+                handle(g, max(newer, key=lambda o: (o["date"], -o["rank"])) if newer else None)
         time.sleep(2)
 
     # 30일 지난 기록 정리
