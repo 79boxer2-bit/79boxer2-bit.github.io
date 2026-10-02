@@ -617,6 +617,14 @@ class BrowserReader:
                 if a["atclNo"] and a["atclNo"] not in seen_no:
                     seen_no.add(a["atclNo"])
                     items.append(a)
+        if self.debug and caught:
+            os.makedirs(DEBUG_DIR, exist_ok=True)
+            with open(os.path.join(DEBUG_DIR, f"{no}_fields.txt"), "w", encoding="utf-8") as fp:
+                fp.write("네이버 매물 데이터 항목 (앞 매물 3건)\n\n")
+                for d in [x for lst in caught for x in lst][:3]:
+                    for k, v in flatten(d).items():
+                        fp.write(f"{k} = {str(v)[:60]}\n")
+                    fp.write("\n" + "-" * 40 + "\n\n")
         source = "데이터"
         if not items and cards:  # 데이터 형식을 못 알아보면 화면 글자로 읽는다
             source = "화면글자"
@@ -682,14 +690,18 @@ def norm(a, complex_name, rank):
     }
 
 
-def same_listing(me, other):
-    """같은 동·거래·전용면적이고, 층이 같거나(층 숫자 없으면 저/중/고 + 가격 일치)."""
+def same_listing(me, other, strict=False):
+    """같은 동·거래·전용면적이고 층이 같으면 같은 집.
+    strict=True(경쟁 광고와 비교할 때): 층 숫자가 둘 다 있고 정확히 같아야 함.
+    (같은 동·같은 층대·같은 호가인 다른 호수가 흔해서 저/중/고 층대만으로는 묶지 않음)"""
     if me["trade"] != other["trade"] or not me["dong"] or me["dong"] != other["dong"]:
         return False
     if abs(me["area"] - other["area"]) > 1.0:
         return False
     if me["floor"] is not None and other["floor"] is not None:
         return me["floor"] == other["floor"]
+    if strict:
+        return False
     return me["band"] is not None and me["band"] == other["band"] and me["price"] == other["price"]
 
 
@@ -962,7 +974,8 @@ def _check_complexes(cfg, state, complexes, reader, names, trades, today, day, a
             if latest:
                 my_dates[gkey] = latest.isoformat()
 
-            rivals = [o for o in arts if not is_mine(o, names) and any(same_listing(x, o) for x in g)]
+            strict = not cfg.get("loose_floor_match", False)
+            rivals = [o for o in arts if not is_mine(o, names) and any(same_listing(x, o, strict) for x in g)]
             newer = [o for o in rivals if o["date"] and latest and o["date"] > latest]
             if cfg.get("alert_rule", "date") == "date":  # 다른 부동산 확인일자가 우리보다 최신일 때만
                 above = newer
