@@ -98,11 +98,11 @@ echo 매물이 0건이면 %DEST%\debug 폴더의 _screen.png 그림을 보내 �
 echo 오류가 보이면 이 창을 캡처해서 보내 주세요.
 echo.
 
-schtasks /Create /F /TN "HaneulAdMonitor" /SC MINUTE /MO 30 /TR "\"%PYW%\" \"%DEST%\ad_monitor.py\"" >nul
+schtasks /Create /F /TN "HaneulAdMonitor" /SC DAILY /ST 11:00 /RI 180 /DU 0006:30 /TR "\"%PYW%\" \"%DEST%\ad_monitor.py\"" >nul
 if errorlevel 1 (
   echo 자동 실행 등록에 실패했습니다. 이 파일을 마우스 오른쪽 - 관리자 권한으로 실행해 보세요.
 ) else (
-  echo 자동 실행 등록 완료: PC가 켜져 있으면 30분마다, 오전 10시~저녁 6시에만 감시합니다.
+  echo 자동 실행 등록 완료: PC가 켜져 있으면 매일 오전 11시, 오후 2시, 오후 5시 하루 3번 감시합니다.
 )
 echo.
 echo 카카오톡 연결이 아직이면 %DEST%\kakao_setup.bat 을 실행하세요. 지금 바로 점검하려면 %DEST%\check_now.bat 을 실행하세요.

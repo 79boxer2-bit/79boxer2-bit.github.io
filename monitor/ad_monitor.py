@@ -2,7 +2,7 @@
 """
 하늘공인중개사 - 네이버 부동산 광고 순위 감시
 
-사무실 PC에서 30분마다(오전 10시~저녁 6시) 실행됩니다.
+사무실 PC에서 매일 11시·14시·17시, 하루 3번 실행됩니다.
 감시 단지의 네이버 매물을 '랭킹순'으로 읽어서, 우리 사무소 매물과 같은 매물을
 다른 부동산이 더 위에(또는 더 최신 확인일자로) 올렸으면 카카오톡으로 알립니다.
 재광고는 건당 비용이 들기 때문에 자동으로 누르지 않고, 알림만 보냅니다.
@@ -28,7 +28,7 @@ import urllib.parse
 import urllib.request
 import webbrowser
 
-VERSION = "2026-10-02g"
+VERSION = "2026-10-02h"
 HERE = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = os.path.join(HERE, "config.json")
 COMPLEX_TXT = os.path.join(HERE, "complexes.txt")
@@ -1340,7 +1340,7 @@ def main():
     n = check(cfg, state)
     log(f"감시 완료: 새 알림 {n}건")
     end_hour = cfg.get("hours", [10, 18])[1]
-    if t.hour >= end_hour - 1 and t.minute >= 45 or t.hour >= end_hour:
+    if t.hour >= end_hour - 1:  # 마지막(오후 5시) 점검 때 오늘 요약도 보냄
         if not state.get("summary_sent", {}).get(t.date().isoformat()):
             summary(cfg, state)
     save_json(STATE_PATH, state)
