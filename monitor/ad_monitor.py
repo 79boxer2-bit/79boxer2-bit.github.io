@@ -28,7 +28,7 @@ import urllib.parse
 import urllib.request
 import webbrowser
 
-VERSION = "2026-10-02h"
+VERSION = "2026-10-02i"
 HERE = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = os.path.join(HERE, "config.json")
 COMPLEX_TXT = os.path.join(HERE, "complexes.txt")
@@ -84,6 +84,7 @@ DEFAULT_CONFIG = {
     "trade_types": ["매매", "전세", "월세"],
     "max_pages": 10,
     "max_alerts_per_day": 20,
+    "check_cheaper": True,  # 같은 매물을 다른 부동산이 더 싸게 올리면 알림
     "source": "browser",
     "browser": "msedge",
     "show_browser": False,
@@ -592,19 +593,31 @@ def group_from_text(collapsed, expanded, my_names):
     head = card_to_legacy({"text": collapsed, "href": ""}, my_names)
     body = expanded.split("등록했어요", 1)[-1] if "등록했어요" in expanded else expanded
     marks = [(m.start(), "date", m.group(0)) for m in DATE_RE.finditer(body)]
+    marks += [(m.start(), "price", (m.group(2).strip(), m.group(3) or "")) for m in CARD_RE["trade"].finditer(body)]
     marks += [(m.start(), "broker", re.sub(r"^(확인매물|집주인|현장|모바일)+", "", m.group(1)))
               for m in BROKER_RE.finditer(body) if m.group(1) not in CP_NAMES]
     marks.sort()
-    members, date = [], None
+    members, date, price = [], None, None
     for _, kind, val in marks:
-        if kind == "date":
+        if kind == "price":
+            price = val
+        elif kind == "date":
             date = val
         elif date:
             d = dict(head)
-            d.update({"rltrNm": val, "atclCfmYmd": date, "isRep": not members,
+            d.update({"rltrNm": val, "atclCfmYmd": date, "isRep": not members, "priceOk": bool(price),
                       "atclNo": "g" + hashlib.md5(f"{collapsed[:80]}|{val}|{date}|{len(members)}".encode("utf-8")).hexdigest()[:12]})
+            if price:  # 광고마다 따로 적힌 가격 (없으면 대표 가격을 그대로 두고 가격 비교에서 뺀다)
+                d["prcInfo"] = price[0]
+                d["rentPrc"] = price[1] if head.get("tradTpNm") in ("월세", "단기임대") else ""
             members.append(d)
-            date = None
+            date, price = None, None
+    # 가격 순서가 어긋나 보이면(빠진 가격, 대표 가격 불일치) 잘못된 알림을 막기 위해 가격 비교를 하지 않는다
+    n_price = sum(1 for _, kind, _ in marks if kind == "price")
+    if members and (n_price != len(members) or not all(x["priceOk"] for x in members)
+                    or man_won(members[0]["prcInfo"]) != man_won(head.get("prcInfo"))):
+        for x in members:
+            x["priceOk"] = False
     return members
 
 
@@ -715,7 +728,7 @@ class BrowserReader:
             if self.cfg.get("expand_groups", True) and "{no}" not in FIN_URL:
                 self.last_groups = []
                 names = [x[:4] for x in self.cfg.get("my_office_names", []) if x]
-                n_dup = self.page.evaluate(DUP_JS, names)
+                n_dup = self.page.evaluate(DUP_JS, [] if self.cfg.get("check_cheaper", True) else names)
                 if n_dup:
                     log(f"   같은 집 묶음 {n_dup}개를 펼쳐 확인합니다...")
                 for i in range(n_dup):
@@ -800,7 +813,7 @@ class BrowserReader:
                                     for k, v in flatten(d).items():
                                         fp.write(f"{k} = {str(v)[:60]}\n")
                                     fp.write("\n" + "-" * 40 + "\n\n")
-                log(f"   (다른 부동산이 대표인 묶음 {n_dup}개 펼침, 읽은 묶음 {len(self.last_groups)}개)")
+                log(f"   (같은 집 묶음 {n_dup}개 펼침, 읽은 묶음 {len(self.last_groups)}개)")
                 if n_dup and not self.last_groups:
                     self.last_groups = None  # 펼친 내용을 못 읽으면 예비 방식으로
             caught = caught[:main_n]
@@ -894,7 +907,27 @@ def norm(a, complex_name, rank):
         "realtor": str(a.get("rltrNm") or a.get("realtorName") or ""),
         "flr_text": str(a.get("flrInfo", "")),
         "rep": bool(a.get("isRep")),
+        "pmain": man_won(a.get("prcInfo")), "prent": man_won(a.get("rentPrc")) or 0,
+        "price_ok": a.get("priceOk", True),
     }
+
+
+def man_won(text):
+    """'4억 2,000' -> 42000, '3,000' -> 3000 (만원). 못 읽으면 None."""
+    t = str(text or "").replace(",", "").replace(" ", "")
+    m = re.fullmatch(r"(?:(\d+)억)?(\d+)?", t)
+    if not t or not m or not (m.group(1) or m.group(2)):
+        return None
+    return int(m.group(1) or 0) * 10000 + int(m.group(2) or 0)
+
+
+def cheaper(o, me):
+    """o 광고가 me 광고보다 싸면 True (월세는 보증금·월세 둘 다 같거나 낮고 하나라도 낮을 때)."""
+    if not (o["price_ok"] and me["price_ok"]) or o["pmain"] is None or me["pmain"] is None:
+        return False
+    if me["trade"] in ("월세", "단기임대"):
+        return o["pmain"] <= me["pmain"] and o["prent"] <= me["prent"] and (o["pmain"], o["prent"]) != (me["pmain"], me["prent"])
+    return o["pmain"] < me["pmain"]
 
 
 def same_listing(me, other, strict=False):
@@ -1103,7 +1136,7 @@ def check(cfg, state, dry=False, only_first=False):
         except Exception as e:
             log(f"브라우저 시작 실패: {e}")
             return 0
-    out = {"behind": [], "readded": []}
+    out = {"behind": [], "readded": [], "cheaper": []}
     try:
         n = _check_complexes(cfg, state, complexes, reader, names, trades, today, day, alerted, my_dates, dry, only_first, out)
     finally:
@@ -1148,7 +1181,19 @@ def pack_messages(title, blocks, limit=180):
 
 
 def send_digest(cfg, out, dry=False):
-    """네이버 밀림만 단지별로 묶어 보기 좋게 보낸다. 매물 하나가 두 통으로 쪼개지지 않게 나눈다."""
+    """네이버 밀림·더 싼 광고를 단지별로 묶어 보기 좋게 보낸다. 매물 하나가 두 통으로 쪼개지지 않게 나눈다."""
+    send_behind(cfg, out, dry)
+    if out.get("cheaper"):
+        items = sorted(out["cheaper"], key=lambda b: b["complex"])
+        blocks = [(b["complex"], [f"· {b['spot']} {b['trade']}",
+                                  f"  {b['rival']} {short_price(b['rival_price'])} ◀ 우리 {short_price(b['my_price'])}"]) for b in items]
+        msgs = pack_messages(f"[네이버 더 싼 광고 {len(items)}건] {now():%m/%d %H:%M}", blocks)
+        msgs[-1] += "\n→ 가격 확인 필요"
+        for m in msgs:
+            notify(cfg, m, "https://fin.land.naver.com", dry)
+
+
+def send_behind(cfg, out, dry=False):
     if not out["behind"]:
         return
     items = sorted(out["behind"], key=lambda b: b.get("complex", ""))
@@ -1221,6 +1266,29 @@ def _check_complexes(cfg, state, complexes, reader, names, trades, today, day, a
             })
             log(f"   밀림: {name} {me['dong']}동 {me['flr_text']} {me['trade']} {me['price']} - {top['realtor']} {d_top} / 우리 {d_me} (우리 광고 {len(g)}건)")
 
+        def check_cheaper(ours, others):
+            """같은 집 묶음 안에서 우리보다 싸게 올린 다른 부동산 광고를 알린다."""
+            nonlocal new_alerts
+            priced = [x for x in ours if x["price_ok"] and x["pmain"] is not None]
+            if not priced:
+                return
+            me = min(priced, key=lambda x: (x["pmain"], x["prent"]))
+            low = [o for o in others if cheaper(o, me)]
+            if not low:
+                return
+            o = min(low, key=lambda x: (x["pmain"], x["prent"]))
+            gkey = f"{name}|{me['trade']}|{me['dong']}|{me['floor'] or me['band']}|{me['area']:.0f}"
+            day.setdefault("cheaper", {})[gkey] = f"{name} {me['dong']}동 {me['flr_text']} {me['trade']} 우리 {me['price']} > {short_realtor(o['realtor'])} {o['price']}"
+            akey = f"cheap|{gkey}|{short_realtor(o['realtor'])}|{o['price']}"
+            if akey in alerted or day["alerts"] >= cfg.get("max_alerts_per_day", 20):
+                return
+            alerted[akey] = today
+            day["alerts"] += 1
+            new_alerts += 1
+            out["cheaper"].append({"complex": name, "spot": f"{me['dong']}동 {me['flr_text']}", "trade": me["trade"],
+                                   "rival": short_realtor(o["realtor"]), "rival_price": o["price"], "my_price": me["price"]})
+            log(f"   더 싼 광고: {name} {me['dong']}동 {me['flr_text']} {me['trade']} 우리 {me['price']} - {o['realtor']} {o['price']}")
+
         naver_groups = getattr(reader, "last_groups", None) if reader else None
         if naver_groups is not None:
             # 네이버가 묶어 둔 '같은 집' 묶음 기준: 우리 광고가 들어 있는데 대표(맨 위)가 다른 부동산이면 밀림
@@ -1237,8 +1305,11 @@ def _check_complexes(cfg, state, complexes, reader, names, trades, today, day, a
                     rep = max(others, key=lambda o: o["date"] or datetime.date.min) if others else None
                 if rep is not None and is_mine(rep, names):
                     rep = None
-                handle(sorted(ours, key=lambda x: x["date"] or datetime.date.min, reverse=True), rep)
+                ours_sorted = sorted(ours, key=lambda x: x["date"] or datetime.date.min, reverse=True)
+                handle(ours_sorted, rep)
                 done |= {x["no"] for x in ours}
+                if cfg.get("check_cheaper", True):
+                    check_cheaper(ours_sorted, [x for x in members if not is_mine(x, names)])
             for m in mine:  # 우리가 대표인 묶음 = 밀리지 않음 (재광고 기록만)
                 if m["no"] not in done:
                     handle([m], None)
@@ -1275,6 +1346,10 @@ def summary(cfg, state, dry=False):
     lines += [f"- {b}" for b in behind[:10]]
     if len(behind) > 10:
         lines.append(f"외 {len(behind) - 10}건")
+    cheap = list(day.get("cheaper", {}).values())
+    if cheap:
+        lines.append(f"[더 싼 광고 {len(cheap)}건]")
+        lines += [f"- {b}" for b in cheap[:10]]
     notify(cfg, "\n".join(lines), dry=dry)
     state.setdefault("summary_sent", {})[today] = True
 
