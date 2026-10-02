@@ -28,6 +28,7 @@ import urllib.parse
 import urllib.request
 import webbrowser
 
+VERSION = "2026-10-02c"
 HERE = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = os.path.join(HERE, "config.json")
 COMPLEX_TXT = os.path.join(HERE, "complexes.txt")
@@ -1162,8 +1163,28 @@ def main():
 
     state = load_json(STATE_PATH, {})
     if cmd == "test":
-        log("=== 테스트: 모든 단지를 읽습니다 (알림 안 보냄, debug 폴더에 원본 저장) ===")
+        log(f"=== 테스트(버전 {VERSION}): 모든 단지를 읽습니다 (알림 안 보냄, debug 폴더에 원본 저장) ===")
         check(cfg, state, dry=True, only_first=True)
+        return
+    if cmd == "report":
+        # 진단 보고서: 버전, debug 파일 목록, 클릭 기록, 최근 로그
+        print(f"[진단 보고서] 프로그램 버전 {VERSION} / {now():%Y-%m-%d %H:%M}")
+        print("단지:", ", ".join(f"{c['name']}={complex_no(c.get('url', ''))}" for c in cfg["complexes"]))
+        files = sorted(os.listdir(DEBUG_DIR)) if os.path.isdir(DEBUG_DIR) else []
+        print("debug 파일:", ", ".join(files) or "(없음)")
+        for f in files:
+            if f.endswith("_click.txt"):
+                print(f"\n===== {f} =====")
+                with open(os.path.join(DEBUG_DIR, f), encoding="utf-8") as fp:
+                    print(fp.read()[:6000])
+                break
+        try:
+            with open(LOG_PATH, encoding="utf-8") as fp:
+                lines = fp.read().splitlines()[-40:]
+            print("\n===== 최근 기록 =====")
+            print("\n".join(lines))
+        except FileNotFoundError:
+            print("(기록 없음)")
         return
     if cmd == "preview":
         # 지금 밀린 매물 전체를 새 형식으로 미리 보내기 (보낸 기록은 남기지 않음)
