@@ -28,7 +28,7 @@ import urllib.parse
 import urllib.request
 import webbrowser
 
-VERSION = "2026-10-02d"
+VERSION = "2026-10-02e"
 HERE = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = os.path.join(HERE, "config.json")
 COMPLEX_TXT = os.path.join(HERE, "complexes.txt")
@@ -551,22 +551,39 @@ CARD_TEXT_JS = """(i) => {
   return c ? c.innerText : '';
 }"""
 
-MEMBER_RE = re.compile(
-    r"확인매물\s*(\d{4}\.\d{1,2}\.\d{1,2})\.?[^\n]*\n(?:[^\n]*\n){0,3}?\s*([^\n|]{2,40}?)\s*\|\s*([^\n]{1,20})")
+CLICK_JS = """(i) => {
+  const el = document.querySelector(`[data-hn-dup="${i}"]`);
+  if (!el) return false;
+  el.scrollIntoView({block: 'center'});
+  const t = el.closest('button') || el;
+  t.dispatchEvent(new MouseEvent('click', {bubbles: true, cancelable: true, view: window}));
+  return true;
+}"""
+
+DATE_RE = re.compile(r"(\d{4})\.(\d{1,2})\.(\d{1,2})")
+BROKER_RE = re.compile(r"([가-힣A-Za-z0-9&]+?(?:공인중개사사무소|공인중개사|중개사무소|부동산중개|중개법인|부동산))(?![가-힣])")
+CP_NAMES = {"매경부동산", "부동산뱅크", "부동산써브", "이실장플러스", "텐컴즈", "한경부동산", "부동산114", "네이버부동산", "조인스랜드부동산"}
 
 
 def group_from_text(collapsed, expanded, my_names):
-    """펼친 묶음 화면 글자 -> 같은 집 광고 목록 (첫 번째가 대표)."""
+    """펼친 묶음 화면 글자 -> 같은 집 광고 목록 (첫 번째가 대표).
+    '확인매물 날짜' 다음에 처음 나오는 중개사 이름을 그 광고의 중개사로 본다."""
     head = card_to_legacy({"text": collapsed, "href": ""}, my_names)
     body = expanded.split("등록했어요", 1)[-1] if "등록했어요" in expanded else expanded
-    members = []
-    for date, broker, cp in MEMBER_RE.findall(body):
-        broker = broker.strip()
-        d = dict(head)
-        d.update({"rltrNm": broker, "atclCfmYmd": date,
-                  "atclNo": "g" + hashlib.md5(f"{collapsed[:80]}|{broker}|{cp}|{date}".encode("utf-8")).hexdigest()[:12],
-                  "isRep": not members})
-        members.append(d)
+    marks = [(m.start(), "date", m.group(0)) for m in DATE_RE.finditer(body)]
+    marks += [(m.start(), "broker", m.group(1)) for m in BROKER_RE.finditer(body)
+              if m.group(1) not in CP_NAMES and not m.group(1).endswith(("뱅크", "써브"))]
+    marks.sort()
+    members, date = [], None
+    for _, kind, val in marks:
+        if kind == "date":
+            date = val
+        elif date:
+            d = dict(head)
+            d.update({"rltrNm": val, "atclCfmYmd": date, "isRep": not members,
+                      "atclNo": "g" + hashlib.md5(f"{collapsed[:80]}|{val}|{date}|{len(members)}".encode("utf-8")).hexdigest()[:12]})
+            members.append(d)
+            date = None
     return members
 
 
@@ -685,16 +702,17 @@ class BrowserReader:
                     before = len(caught)
                     before_any = len(all_resp)
                     try:
-                        el = self.page.locator(f'[data-hn-dup="{i}"]').first
-                        el.scroll_into_view_if_needed(timeout=3000)
                         collapsed = self.page.evaluate(CARD_TEXT_JS, i)
-                        el.click(timeout=3000)
+                        if not self.page.evaluate(CLICK_JS, i):
+                            raise RuntimeError("버튼을 찾지 못함")
                         # 응답이 오면 바로 다음으로 (최대 2초)
                         for _ in range(10):
                             self.page.wait_for_timeout(200)
                             if len(caught) > before:
                                 break
-                    except Exception:
+                    except Exception as e:
+                        if i == 0:
+                            log(f"   묶음 누르기 실패: {e}")
                         continue
                     if self.debug and i < 2:
                         self.page.wait_for_timeout(1500)
@@ -722,7 +740,7 @@ class BrowserReader:
                         expanded = ""
                         for _ in range(10):
                             expanded = self.page.evaluate(CARD_TEXT_JS, i)
-                            if expanded.count("|") >= 2:
+                            if expanded.count("확인매물") >= 2 or expanded.count("|") >= 2:
                                 break
                             self.page.wait_for_timeout(200)
                         members = group_from_text(collapsed, expanded, self.cfg.get("my_office_names", []))
