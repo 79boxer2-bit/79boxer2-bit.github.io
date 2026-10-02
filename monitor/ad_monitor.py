@@ -28,7 +28,7 @@ import urllib.parse
 import urllib.request
 import webbrowser
 
-VERSION = "2026-10-02e"
+VERSION = "2026-10-02f"
 HERE = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = os.path.join(HERE, "config.json")
 COMPLEX_TXT = os.path.join(HERE, "complexes.txt")
@@ -551,17 +551,38 @@ CARD_TEXT_JS = """(i) => {
   return c ? c.innerText : '';
 }"""
 
-CLICK_JS = """(i) => {
+CLICK_JS = """([i, mode]) => {
   const el = document.querySelector(`[data-hn-dup="${i}"]`);
   if (!el) return false;
-  el.scrollIntoView({block: 'center'});
-  const t = el.closest('button') || el;
-  t.dispatchEvent(new MouseEvent('click', {bubbles: true, cancelable: true, view: window}));
+  let card = el;
+  for (let k = 0; k < 8 && card; k++) {
+    card = card.parentElement;
+    if (card && /(매매|전세|월세)/.test(card.innerText) && /(㎡|층)/.test(card.innerText)) break;
+  }
+  const scope = card || document;
+  const cands = [...scope.querySelectorAll('button, [role=button], a, div, span')];
+  const label = b => (b.innerText || '') + ' ' + (b.getAttribute('aria-label') || '') + ' ' + (b.getAttribute('title') || '');
+  let t = cands.find(b => (b.tagName === 'BUTTON' || b.getAttribute('role') === 'button') && /펼치기|등록했어요/.test(label(b)))
+       || el.closest('button, [role=button]') || el;
+  t.scrollIntoView({block: 'center'});
+  t.setAttribute('data-hn-btn', String(i));
+  if (mode === 'js') { t.click(); }
+  else if (mode === 'event') {
+    for (const type of ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click'])
+      t.dispatchEvent(new MouseEvent(type, {bubbles: true, cancelable: true, view: window}));
+  } else if (mode === 'focus') { t.focus(); }
   return true;
 }"""
 
+HIDE_POPUP_JS = """() => {
+  for (const el of [...document.querySelectorAll('body *')]) {
+    const st = getComputedStyle(el);
+    if ((st.position === 'fixed' || st.position === 'sticky') && /중개사센터|비즈니스 파트너/.test(el.innerText || '')) el.remove();
+  }
+}"""
+
 DATE_RE = re.compile(r"(\d{4})\.(\d{1,2})\.(\d{1,2})")
-BROKER_RE = re.compile(r"([가-힣A-Za-z0-9&]+?(?:공인중개사사무소|공인중개사|중개사무소|부동산중개|중개법인|부동산))(?![가-힣])")
+BROKER_RE = re.compile(r"([가-힣A-Za-z&]*?(?:공인중개사사무소|공인중개사|중개사무소|중개법인))")
 CP_NAMES = {"매경부동산", "부동산뱅크", "부동산써브", "이실장플러스", "텐컴즈", "한경부동산", "부동산114", "네이버부동산", "조인스랜드부동산"}
 
 
@@ -571,8 +592,8 @@ def group_from_text(collapsed, expanded, my_names):
     head = card_to_legacy({"text": collapsed, "href": ""}, my_names)
     body = expanded.split("등록했어요", 1)[-1] if "등록했어요" in expanded else expanded
     marks = [(m.start(), "date", m.group(0)) for m in DATE_RE.finditer(body)]
-    marks += [(m.start(), "broker", m.group(1)) for m in BROKER_RE.finditer(body)
-              if m.group(1) not in CP_NAMES and not m.group(1).endswith(("뱅크", "써브"))]
+    marks += [(m.start(), "broker", re.sub(r"^(확인매물|집주인|현장|모바일)+", "", m.group(1)))
+              for m in BROKER_RE.finditer(body) if m.group(1) not in CP_NAMES]
     marks.sort()
     members, date = [], None
     for _, kind, val in marks:
@@ -664,6 +685,10 @@ class BrowserReader:
         try:
             self.page.goto(url, wait_until="domcontentloaded", timeout=45000)
             self.page.wait_for_timeout(5000)
+            try:
+                self.page.evaluate(HIDE_POPUP_JS)
+            except Exception:
+                pass
             if "404" in self.page.url:
                 log(f"   네이버가 '페이지 없음'으로 보냈습니다. complexes.txt 에 이 단지의 네이버 지도 주소를 통째로 넣어 주세요.")
             # 매물 탭이 닫혀 있으면 눌러 본다
@@ -703,17 +728,41 @@ class BrowserReader:
                     before_any = len(all_resp)
                     try:
                         collapsed = self.page.evaluate(CARD_TEXT_JS, i)
-                        if not self.page.evaluate(CLICK_JS, i):
-                            raise RuntimeError("버튼을 찾지 못함")
-                        # 응답이 오면 바로 다음으로 (최대 2초)
-                        for _ in range(10):
-                            self.page.wait_for_timeout(200)
-                            if len(caught) > before:
+                        body0 = self.page.evaluate("() => document.body.innerText")
+                        n0 = body0.count("확인매물")
+                        opened, how = False, ""
+                        for mode in ("js", "playwright", "event", "enter"):
+                            if mode == "playwright":
+                                self.page.evaluate(CLICK_JS, [i, "none"])
+                                self.page.locator(f'[data-hn-btn="{i}"]').first.click(force=True, timeout=2000)
+                            elif mode == "enter":
+                                self.page.evaluate(CLICK_JS, [i, "focus"])
+                                self.page.keyboard.press("Enter")
+                            elif not self.page.evaluate(CLICK_JS, [i, mode]):
+                                raise RuntimeError("버튼을 찾지 못함")
+                            for _ in range(8):
+                                self.page.wait_for_timeout(250)
+                                if len(caught) > before or self.page.evaluate("() => document.body.innerText").count("확인매물") > n0:
+                                    opened, how = True, mode
+                                    break
+                            if opened:
                                 break
+                        self.page.wait_for_timeout(500)
+                        body1 = self.page.evaluate("() => document.body.innerText")
                     except Exception as e:
                         if i == 0:
                             log(f"   묶음 누르기 실패: {e}")
                         continue
+                    if i == 0:
+                        log(f"   묶음 펼치기 {'성공(' + how + ')' if opened else '실패'}")
+                    # 펼친 뒤 새로 나타난 줄만 고른다
+                    import difflib
+                    l0, l1 = body0.splitlines(), body1.splitlines()
+                    added = []
+                    for tag, _, _, j1, j2 in difflib.SequenceMatcher(None, l0, l1, autojunk=False).get_opcodes():
+                        if tag in ("insert", "replace"):
+                            added += l1[j1:j2]
+                    expanded = "\n".join(added)
                     if self.debug and i < 2:
                         self.page.wait_for_timeout(1500)
                         os.makedirs(DEBUG_DIR, exist_ok=True)
@@ -730,19 +779,14 @@ class BrowserReader:
                                 fp.write(f"- {r.request.method} {r.status} {ct[:30]} {r.url[:200]}\n")
                                 if body:
                                     fp.write("  " + body.replace("\n", " ") + "\n")
+                            fp.write(f"\n펼침: {'성공(' + how + ')' if opened else '실패'}\n새로 나타난 글자:\n{expanded[:1500]}\n")
                             fp.write("\n카드 글자:\n" + self.page.evaluate(
                                 "(i) => { const el = document.querySelector(`[data-hn-dup=\"${i}\"]`); "
                                 "let c = el; for (let k = 0; k < 8 && c; k++) { c = c.parentElement; "
                                 "if (c && /(매매|전세|월세)/.test(c.innerText) && /(㎡|층)/.test(c.innerText)) break; } "
                                 "return c ? c.innerText.slice(0, 1500) : '(못 찾음)'; }", i) + "\n\n")
                     got = [d for lst in caught[before:] for d in lst]
-                    if not got:  # 데이터로 못 받으면 펼쳐진 화면 글자로 읽는다
-                        expanded = ""
-                        for _ in range(10):
-                            expanded = self.page.evaluate(CARD_TEXT_JS, i)
-                            if expanded.count("확인매물") >= 2 or expanded.count("|") >= 2:
-                                break
-                            self.page.wait_for_timeout(200)
+                    if not got:  # 데이터로 못 받으면 펼쳐진 화면에 새로 나타난 글자로 읽는다
                         members = group_from_text(collapsed, expanded, self.cfg.get("my_office_names", []))
                         if members:
                             self.last_groups.append(members)
