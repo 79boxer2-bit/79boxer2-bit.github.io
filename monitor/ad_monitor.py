@@ -28,7 +28,7 @@ import urllib.parse
 import urllib.request
 import webbrowser
 
-VERSION = "2026-10-02i"
+VERSION = "2026-10-02j"
 HERE = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = os.path.join(HERE, "config.json")
 COMPLEX_TXT = os.path.join(HERE, "complexes.txt")
@@ -600,7 +600,8 @@ def group_from_text(collapsed, expanded, my_names):
     members, date, price = [], None, None
     for _, kind, val in marks:
         if kind == "price":
-            price = val
+            if price is None:  # 광고마다 맨 앞 가격 (설명 글 속 금액은 무시)
+                price = val
         elif kind == "date":
             date = val
         elif date:
@@ -612,10 +613,9 @@ def group_from_text(collapsed, expanded, my_names):
                 d["rentPrc"] = price[1] if head.get("tradTpNm") in ("월세", "단기임대") else ""
             members.append(d)
             date, price = None, None
-    # 가격 순서가 어긋나 보이면(빠진 가격, 대표 가격 불일치) 잘못된 알림을 막기 위해 가격 비교를 하지 않는다
-    n_price = sum(1 for _, kind, _ in marks if kind == "price")
-    if members and (n_price != len(members) or not all(x["priceOk"] for x in members)
-                    or man_won(members[0]["prcInfo"]) != man_won(head.get("prcInfo"))):
+    # 가격이 빠진 광고가 있으면 잘못된 알림을 막기 위해 이 묶음은 가격 비교를 하지 않는다
+    # (금액이 서로 다르면 묶음 카드에 '2억 8,700 ~ 2억 9,000' 처럼 범위로 나오므로 대표 가격과는 비교하지 않음)
+    if members and not all(x["priceOk"] for x in members):
         for x in members:
             x["priceOk"] = False
     return members
