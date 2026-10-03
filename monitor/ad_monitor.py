@@ -28,7 +28,7 @@ import urllib.parse
 import urllib.request
 import webbrowser
 
-VERSION = "2026-10-02j"
+VERSION = "2026-10-03a"
 HERE = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = os.path.join(HERE, "config.json")
 COMPLEX_TXT = os.path.join(HERE, "complexes.txt")
@@ -613,12 +613,23 @@ def group_from_text(collapsed, expanded, my_names):
                 d["rentPrc"] = price[1] if head.get("tradTpNm") in ("월세", "단기임대") else ""
             members.append(d)
             date, price = None, None
-    # 가격이 빠진 광고가 있으면 잘못된 알림을 막기 위해 이 묶음은 가격 비교를 하지 않는다
-    # (금액이 서로 다르면 묶음 카드에 '2억 8,700 ~ 2억 9,000' 처럼 범위로 나오므로 대표 가격과는 비교하지 않음)
-    if members and not all(x["priceOk"] for x in members):
-        for x in members:
-            x["priceOk"] = False
+    # 금액이 서로 다르면 묶음 카드에 '2억 8,700 ~ 2억 9,000' 처럼 범위로 나온다 -> 가장 싼 금액을 기록
+    # (광고별 가격을 못 읽은 경우에도 '우리보다 싼 광고가 있다'는 것만은 알 수 있게)
+    rng = re.search(r"(매매|전세)\s*(\d+억(?:\s?[\d,]+)?|[\d,]+)\s*~\s*(\d+억(?:\s?[\d,]+)?|[\d,]+)", " ".join(collapsed.split()))
+    for x in members:
+        x["rangeMin"] = man_won(rng.group(2)) if rng else None
+        x["rangeMinText"] = rng.group(2).strip() if rng else ""
     return members
+
+
+def same_house(x, head):
+    """묶음을 펼칠 때 받은 데이터가 정말 그 집(같은 동·거래·면적) 광고인지."""
+    dx, dh = re.sub(r"\D", "", str(x.get("bildNm", ""))), re.sub(r"\D", "", str(head.get("bildNm", "")))
+    try:
+        close = abs(float(x.get("spc2") or 0) - float(head.get("spc2") or 0)) <= 1.0
+    except ValueError:
+        close = False
+    return bool(dx) and dx == dh and x.get("tradTpNm") == head.get("tradTpNm") and close
 
 
 class BrowserReader:
@@ -661,6 +672,7 @@ class BrowserReader:
     def fetch(self, no, trade_types, page_url=""):
         caught, seq = [], [0]
         self.last_groups = None
+        self.group_log = []
         if self.debug:
             try:
                 os.remove(os.path.join(DEBUG_DIR, f"{no}_click.txt"))
@@ -729,6 +741,7 @@ class BrowserReader:
                 self.last_groups = []
                 names = [x[:4] for x in self.cfg.get("my_office_names", []) if x]
                 n_dup = self.page.evaluate(DUP_JS, [] if self.cfg.get("check_cheaper", True) else names)
+                self.group_log = []
                 if n_dup:
                     log(f"   같은 집 묶음 {n_dup}개를 펼쳐 확인합니다...")
                 for i in range(n_dup):
@@ -799,13 +812,22 @@ class BrowserReader:
                                 "if (c && /(매매|전세|월세)/.test(c.innerText) && /(㎡|층)/.test(c.innerText)) break; } "
                                 "return c ? c.innerText.slice(0, 1500) : '(못 찾음)'; }", i) + "\n\n")
                     got = [d for lst in caught[before:] for d in lst]
-                    if not got:  # 데이터로 못 받으면 펼쳐진 화면에 새로 나타난 글자로 읽는다
+                    head = card_to_legacy({"text": collapsed, "href": ""}, [])
+                    same = [x for x in (to_legacy(d) for d in got) if same_house(x, head)]
+                    want = re.search(r"중개사\s*(\d+)\s*곳", collapsed)
+                    want = int(want.group(1)) if want else 0
+                    if len(same) < 2:  # 데이터로 못 받으면(또는 다른 집 데이터면) 펼쳐진 화면에 새로 나타난 글자로 읽는다
                         members = group_from_text(collapsed, expanded, self.cfg.get("my_office_names", []))
+                        self.group_log.append(
+                            f"{' '.join(collapsed.split())[:60]} | 펼침 {'O' if opened else 'X'} | 중개사 {want}곳 중 {len(members)}곳 읽음 | "
+                            + ", ".join(f"{short_realtor(m['rltrNm'])} {m['prcInfo'] if m.get('priceOk') else '가격?'}" for m in members))
                         if members:
                             self.last_groups.append(members)
                         continue
-                    if got:
-                        self.last_groups.append([to_legacy(d) for d in got])
+                    self.group_log.append(f"{' '.join(collapsed.split())[:60]} | 데이터 | 중개사 {want}곳 중 {len(same)}곳 | "
+                                          + ", ".join(f"{short_realtor(m['rltrNm'])} {m['prcInfo']}" for m in same))
+                    if same:
+                        self.last_groups.append(same)
                         if self.debug and len(self.last_groups) == 1:
                             os.makedirs(DEBUG_DIR, exist_ok=True)
                             with open(os.path.join(DEBUG_DIR, f"{no}_group_fields.txt"), "w", encoding="utf-8") as fp:
@@ -814,6 +836,12 @@ class BrowserReader:
                                         fp.write(f"{k} = {str(v)[:60]}\n")
                                     fp.write("\n" + "-" * 40 + "\n\n")
                 log(f"   (같은 집 묶음 {n_dup}개 펼침, 읽은 묶음 {len(self.last_groups)}개)")
+                try:  # 묶음마다 읽은 내용 (진단용, 매번 덮어씀)
+                    os.makedirs(DEBUG_DIR, exist_ok=True)
+                    with open(os.path.join(DEBUG_DIR, f"{no}_groups.txt"), "w", encoding="utf-8") as fp:
+                        fp.write(f"{now():%m/%d %H:%M} 묶음 {n_dup}개\n" + "\n".join(self.group_log) + "\n")
+                except OSError:
+                    pass
                 if n_dup and not self.last_groups:
                     self.last_groups = None  # 펼친 내용을 못 읽으면 예비 방식으로
             caught = caught[:main_n]
@@ -909,6 +937,7 @@ def norm(a, complex_name, rank):
         "rep": bool(a.get("isRep")),
         "pmain": man_won(a.get("prcInfo")), "prent": man_won(a.get("rentPrc")) or 0,
         "price_ok": a.get("priceOk", True),
+        "range_min": a.get("rangeMin"), "range_min_text": a.get("rangeMinText", ""),
     }
 
 
@@ -1274,16 +1303,22 @@ def _check_complexes(cfg, state, complexes, reader, names, trades, today, day, a
                 return
             me = min(priced, key=lambda x: (x["pmain"], x["prent"]))
             low = [o for o in others if cheaper(o, me)]
-            if not low:
-                return
-            o = min(low, key=lambda x: (x["pmain"], x["prent"]))
+            if low:
+                o = min(low, key=lambda x: (x["pmain"], x["prent"]))
+            else:
+                # 광고별 가격을 못 읽었어도 묶음 카드의 가격 범위 최저가가 우리보다 싸면 알림
+                rmin = ours[0].get("range_min")
+                unknown = [x for x in others if not x["price_ok"]]
+                if not (rmin and unknown and me["trade"] in ("매매", "전세") and rmin < me["pmain"]):
+                    return
+                o = dict(unknown[0], realtor="다른 부동산", price=ours[0].get("range_min_text") or "")
             gkey = f"{name}|{me['trade']}|{me['dong']}|{me['floor'] or me['band']}|{me['area']:.0f}"
             day.setdefault("cheaper", {})[gkey] = f"{name} {me['dong']}동 {me['flr_text']} {me['trade']} 우리 {me['price']} > {short_realtor(o['realtor'])} {o['price']}"
             akey = f"cheap|{gkey}|{short_realtor(o['realtor'])}|{o['price']}"
-            if akey in alerted or day["alerts"] >= cfg.get("max_alerts_per_day", 20):
+            if akey in alerted or day.get("cheap_alerts", 0) >= cfg.get("max_cheaper_alerts_per_day", 40):
                 return
             alerted[akey] = today
-            day["alerts"] += 1
+            day["cheap_alerts"] = day.get("cheap_alerts", 0) + 1
             new_alerts += 1
             out["cheaper"].append({"complex": name, "spot": f"{me['dong']}동 {me['flr_text']}", "trade": me["trade"],
                                    "rival": short_realtor(o["realtor"]), "rival_price": o["price"], "my_price": me["price"]})
@@ -1390,6 +1425,11 @@ def main():
                 with open(os.path.join(DEBUG_DIR, f), encoding="utf-8") as fp:
                     print(fp.read()[:6000])
                 break
+        for f in files:
+            if f.endswith("_groups.txt"):
+                name = next((c["name"] for c in cfg["complexes"] if complex_no(c.get("url", "")) == f.split("_")[0]), f)
+                with open(os.path.join(DEBUG_DIR, f), encoding="utf-8") as fp:
+                    print(f"\n===== {name} 묶음 =====\n" + fp.read()[:2500])
         try:
             with open(LOG_PATH, encoding="utf-8") as fp:
                 lines = fp.read().splitlines()[-40:]
