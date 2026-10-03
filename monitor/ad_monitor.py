@@ -28,7 +28,7 @@ import urllib.parse
 import urllib.request
 import webbrowser
 
-VERSION = "2026-10-03a"
+VERSION = "2026-10-03b"
 HERE = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = os.path.join(HERE, "config.json")
 COMPLEX_TXT = os.path.join(HERE, "complexes.txt")
@@ -1217,6 +1217,8 @@ def send_digest(cfg, out, dry=False):
         blocks = [(b["complex"], [f"· {b['spot']} {b['trade']}",
                                   f"  {b['rival']} {short_price(b['rival_price'])} ◀ 우리 {short_price(b['my_price'])}"]) for b in items]
         msgs = pack_messages(f"[네이버 더 싼 광고 {len(items)}건] {now():%m/%d %H:%M}", blocks)
+        if any("(따로)" in b["rival"] for b in items):
+            msgs[-1] += "\n(따로)=네이버가 묶지 않은 같은 동·층 광고"
         msgs[-1] += "\n→ 가격 확인 필요"
         for m in msgs:
             notify(cfg, m, "https://fin.land.naver.com", dry)
@@ -1321,10 +1323,12 @@ def _check_complexes(cfg, state, complexes, reader, names, trades, today, day, a
             day["cheap_alerts"] = day.get("cheap_alerts", 0) + 1
             new_alerts += 1
             out["cheaper"].append({"complex": name, "spot": f"{me['dong']}동 {me['flr_text']}", "trade": me["trade"],
-                                   "rival": short_realtor(o["realtor"]), "rival_price": o["price"], "my_price": me["price"]})
+                                   "rival": short_realtor(o["realtor"]) + ("(따로)" if o.get("solo") else ""),
+                                   "rival_price": o["price"], "my_price": me["price"]})
             log(f"   더 싼 광고: {name} {me['dong']}동 {me['flr_text']} {me['trade']} 우리 {me['price']} - {o['realtor']} {o['price']}")
 
         naver_groups = getattr(reader, "last_groups", None) if reader else None
+        pending = []  # (같은 집 우리 광고들, 같은 묶음 다른 부동산 광고들)
         if naver_groups is not None:
             # 네이버가 묶어 둔 '같은 집' 묶음 기준: 우리 광고가 들어 있는데 대표(맨 위)가 다른 부동산이면 밀림
             done = set()
@@ -1343,8 +1347,7 @@ def _check_complexes(cfg, state, complexes, reader, names, trades, today, day, a
                 ours_sorted = sorted(ours, key=lambda x: x["date"] or datetime.date.min, reverse=True)
                 handle(ours_sorted, rep)
                 done |= {x["no"] for x in ours}
-                if cfg.get("check_cheaper", True):
-                    check_cheaper(ours_sorted, [x for x in members if not is_mine(x, names)])
+                pending.append((ours_sorted, [x for x in members if not is_mine(x, names)]))
             for m in mine:  # 우리가 대표인 묶음 = 밀리지 않음 (재광고 기록만)
                 if m["no"] not in done:
                     handle([m], None)
@@ -1364,6 +1367,23 @@ def _check_complexes(cfg, state, complexes, reader, names, trades, today, day, a
                 rivals = [o for o in arts if not is_mine(o, names) and any(same_listing(x, o, strict) for x in g)]
                 newer = [o for o in rivals if o["date"] and latest and o["date"] > latest]
                 handle(g, max(newer, key=lambda o: (o["date"], -o["rank"])) if newer else None)
+        if cfg.get("check_cheaper", True):
+            # 네이버가 묶지 않은 따로 올라온 광고도 비교: 같은 동·거래·면적이고 층 숫자가 정확히 같은 것만
+            def solo(me):
+                if me["floor"] is None:
+                    return []
+                return [dict(o, solo=True) for o in arts if not is_mine(o, names) and o["trade"] == me["trade"]
+                        and o["dong"] == me["dong"] and o["floor"] == me["floor"] and abs(o["area"] - me["area"]) <= 1.0
+                        and (not o["total"] or not me["total"] or o["total"] == me["total"])]
+            hk = lambda x: (x["trade"], x["dong"], x["floor"] or x["band"], round(x["area"]))
+            seen = set()
+            for ours, others in pending:
+                seen.add(hk(ours[0]))
+                check_cheaper(ours, others + solo(ours[0]))
+            for m in mine:
+                if hk(m) not in seen:
+                    seen.add(hk(m))
+                    check_cheaper([m], solo(m))
         time.sleep(2)
 
     # 30일 지난 기록 정리
