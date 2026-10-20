@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>AI 프롬프트 입력기</title>
+<style>
+:root{
+  --sky:#1e88d2; --sky-dark:#155f95; --sky-light:#e8f4fc;
+  --ink:#222; --gray:#767676; --line:#e5e8eb; --bg:#f7f9fb; --card:#fff;
+  --ok:#2e7d32; --ok-bg:#e8f5e9; --warn:#c77700; --warn-bg:#fff4e0;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --sky:#4aa8ea; --sky-dark:#8ccaf5; --sky-light:#16324a;
+    --ink:#e8ecef; --gray:#9aa3ab; --line:#2c343b; --bg:#12171c; --card:#1a2128;
+    --ok:#7ccf80; --ok-bg:#1d3320; --warn:#f0b35a; --warn-bg:#3a2c14;
+  }
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;background:var(--bg);color:var(--ink);line-height:1.5;font-size:14px}
+header{background:linear-gradient(135deg,#12354e,#1e6ba8);color:#fff;padding:22px 16px}
+.wrap{max-width:760px;margin:0 auto}
+header h1{font-size:20px;font-weight:800;letter-spacing:-.4px}
+header p{font-size:13px;opacity:.85;margin-top:4px}
+main{max-width:760px;margin:0 auto;padding:14px 16px 60px;display:flex;flex-direction:column;gap:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+.card h2{font-size:15px;font-weight:800;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.step{display:inline-flex;width:22px;height:22px;border-radius:50%;background:var(--sky);color:#fff;font-size:12px;align-items:center;justify-content:center}
+label.f{display:block;font-size:13px;font-weight:700;margin:12px 0 5px}
+label.f small{font-weight:400;color:var(--gray);margin-left:4px}
+textarea,input[type=text],select{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font:inherit;font-size:14px;background:var(--bg);color:var(--ink);resize:vertical}
+textarea:focus,input:focus,select:focus{outline:2px solid var(--sky);outline-offset:-1px;background:var(--card)}
+#q{min-height:96px;font-size:15px}
+.chip-row{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:13px;font-weight:600;padding:7px 12px;border-radius:99px;cursor:pointer}
+.chip.on{background:var(--sky);border-color:var(--sky);color:#fff}
+.auto-note{font-size:12px;color:var(--gray);margin-top:6px;min-height:18px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+@media(max-width:520px){.grid2{grid-template-columns:1fr}}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px}
+@media(max-width:520px){.opts{grid-template-columns:1fr}}
+.opt{display:flex;gap:8px;align-items:flex-start;font-size:13px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;cursor:pointer;background:var(--bg)}
+.opt input{margin-top:3px;accent-color:var(--sky)}
+details summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--sky-dark);margin-top:12px}
+.meter{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.bar{flex:1;height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--sky);transition:.25s}
+.meter b{font-size:13px;min-width:70px;text-align:right}
+.tips{list-style:none;display:flex;flex-direction:column;gap:5px}
+.tips li{font-size:12.5px;padding:7px 10px;border-radius:8px;background:var(--warn-bg);color:var(--warn)}
+.tips li.ok{background:var(--ok-bg);color:var(--ok)}
+#out{min-height:280px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;line-height:1.6}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.btn{border:0;border-radius:10px;padding:11px 16px;font:inherit;font-size:14px;font-weight:700;cursor:pointer;background:var(--sky-light);color:var(--sky-dark)}
+.btn.main{background:var(--sky);color:#fff;flex:1 1 100%}
+.btn:active{transform:scale(.98)}
+.hint{font-size:12px;color:var(--gray);margin-top:8px}
+.hist{list-style:none;display:flex;flex-direction:column;gap:6px}
+.hist li{display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13px}
+.hist li span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hist li button{border:0;background:var(--sky-light);color:var(--sky-dark);border-radius:7px;padding:4px 9px;font-size:12px;cursor:pointer}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:99px;font-size:13px;opacity:0;pointer-events:none;transition:.2s;z-index:9}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <h1>AI 프롬프트 입력기</h1>
+  <p>질문을 대충 적어도, AI가 가장 잘 알아듣는 형태로 정리해 드립니다.</p>
+</div></header>
+
+<main>
+  <section class="card">
+    <h2><span class="step">1</span>무엇이 궁금하세요?</h2>
+    <textarea id="q" placeholder="예) 남양읍 32평 아파트 매매 광고 문구 써줘 / RKLB 지금 사도 돼? / 아버지 농지 상속받으면 영농상속공제 되나?"></textarea>
+
+    <label class="f">분야 <small>질문을 보고 자동으로 골라 드려요. 직접 바꿔도 됩니다.</small></label>
+    <div class="chip-row" id="cats"></div>
+    <div class="auto-note" id="autoNote"></div>
+  </section>
+
+  <section class="card">
+    <h2><span class="step">2</span>조금만 더 알려주면 답이 정확해져요 <small style="font-weight:400;color:var(--gray);font-size:12px">(선택)</small></h2>
+    <label class="f">어디에 쓰실 건가요? <small>목적</small></label>
+    <input type="text" id="goal" placeholder="예) 네이버부동산에 올릴 광고 / 매수 여부 판단 / 세무사 상담 전 정리">
+
+    <label class="f">상황·배경 <small>숫자, 지역, 날짜, 이미 아는 것</small></label>
+    <textarea id="ctx" rows="3" placeholder="예) 2015년식, 남향, 로열층, 확장, 초등학교 도보 5분, 매매가 4억 2천"></textarea>
+
+    <div class="grid2">
+      <div>
+        <label class="f">원하는 결과 형태</label>
+        <select id="fmt">
+          <option value="">AI가 알아서</option>
+          <option value="summary">핵심만 짧게 요약</option>
+          <option value="steps">단계별 실행 가이드</option>
+          <option value="table">표로 비교</option>
+          <option value="variants">여러 버전 제시</option>
+          <option value="report">보고서 형식</option>
+          <option value="checklist">체크리스트</option>
+        </select>
+      </div>
+      <div>
+        <label class="f">분량</label>
+        <select id="len">
+          <option value="">AI가 알아서</option>
+          <option value="short">짧게 (5줄 안팎)</option>
+          <option value="mid">보통</option>
+          <option value="long">자세히</option>
+        </select>
+      </div>
+    </div>
+
+    <details>
+      <summary>더 넣을 것 (참고자료, 피할 것, 내 소개)</summary>
+      <label class="f">참고자료 <small>기사, 표, 기존 글 등을 붙여넣기</small></label>
+      <textarea id="ref" rows="4"></textarea>
+      <label class="f">피해야 할 것</label>
+      <input type="text" id="avoid" placeholder="예) 전문용어, 과장 표현, 영어 섞기">
+      <label class="f">내 소개 <small>이 기기에만 저장되고 매번 자동으로 들어갑니다</small></label>
+      <textarea id="profile" rows="3" placeholder="예) 화성시 남양읍에서 17년째 공인중개사무소를 운영하고 있습니다."></textarea>
+    </details>
+  </section>
+
+  <section class="card">
+    <h2><span class="step">3</span>답변 규칙</h2>
+    <div class="opts" id="opts"></div>
+    <div class="grid2">
+      <div>
+        <label class="f">어떤 AI에 넣으실 건가요?</label>
+        <select id="ai">
+          <option value="claude">Claude</option>
+          <option value="chatgpt">ChatGPT</option>
+          <option value="gemini">Gemini</option>
+        </select>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2><span class="step">4</span>완성된 프롬프트</h2>
+    <div class="meter"><div class="bar"><i id="barFill"></i></div><b id="score">0점</b></div>
+    <ul class="tips" id="tips"></ul>
+    <label class="f">아래 내용은 직접 고쳐도 됩니다</label>
+    <textarea id="out" spellcheck="false"></textarea>
+    <div class="btns">
+      <button class="btn main" id="copyOpen">복사하고 AI 열기</button>
+      <button class="btn" id="copy">복사만</button>
+      <button class="btn" id="reset">새 질문</button>
+    </div>
+    <p class="hint">AI 창이 열리면 입력칸에 붙여넣기(길게 누르기 또는 Ctrl+V) 하세요. 입력 내용은 서버로 전송되지 않고 이 기기에서만 처리됩니다.</p>
+  </section>
+
+  <section class="card" id="histCard" hidden>
+    <h2>최근 프롬프트</h2>
+    <ul class="hist" id="hist"></ul>
+  </section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+const CATS = {
+  general: {
+    label: '일반', role: '질문 분야의 실무 경험이 풍부한 전문가',
+    kw: [], opts: ['honest', 'clarify', 'conclusion'],
+    rules: [], format: []
+  },
+  ad: {
+    label: '부동산 광고문구', role: '네이버부동산·직방 매물 광고를 수천 건 써 본 부동산 마케팅 카피라이터',
+    kw: ['광고', '문구', '직방', '네이버부동산', '다방', '매물', '홍보문구', '카피'],
+    opts: ['honest', 'variants'],
+    rules: [
+      '공인중개사법 및 「중개대상물의 표시·광고 명시사항」을 지켜 주세요. 사실과 다르거나 과장된 표현(최저가, 급매 보장, 무조건 상승 등)은 쓰지 마세요.',
+      '제공한 정보에 없는 사실(층수, 면적, 학군 거리 등)은 지어내지 말고, 필요하면 [확인 필요]로 표시해 주세요.'
+    ],
+    format: [
+      '모바일 가독성 기준으로 한 줄 15~25자, 짧게 줄바꿈해 주세요.',
+      '강조점을 달리한 5가지 버전(입지 / 조망 / 인테리어 / 특화공간 / 균형형)으로 제시해 주세요.',
+      '각 버전마다 첫 줄은 시선을 끄는 헤드라인으로 해 주세요.'
+    ]
+  },
+  blog: {
+    label: '네이버 블로그', role: '네이버 검색 상위 노출 경험이 많은 블로그 콘텐츠 전문 작가',
+    kw: ['블로그', '포스팅', '네이버 글', '게시글', '상위노출', '후기글'],
+    opts: ['web', 'honest', 'selfcheck'],
+    rules: [
+      '쓰기 전에 현재 시점의 네이버 검색 로직(C-Rank, D.I.A., AI 기반 검색 등)을 웹검색으로 확인하고 반영해 주세요. 과거 지식으로만 쓰지 마세요.',
+      '직접 겪은 경험과 현장 전문성이 드러나게 쓰고, 키워드를 억지로 반복하지 마세요.'
+    ],
+    format: [
+      '분량은 공백 포함 2,800~4,000자로 해 주세요.',
+      '사진이 들어갈 자리를 [사진: 설명] 형식으로 표시하고, 사진 설명 중심으로 구성해 주세요.',
+      '제목 후보 3개, 본문, 추천 태그 10개 순서로 주세요.'
+    ]
+  },
+  stock: {
+    label: '주식·투자', role: '월가 기관투자자 수준의 분석 프레임워크를 쓰는 주식 애널리스트',
+    kw: ['주식', '주가', '매수', '매도', '종목', '투자', '실적', '목표가', '배당', 'ETF', '나스닥', '코스피', '손절'],
+    opts: ['web', 'honest', 'sources', 'conclusion'],
+    rules: [
+      '분석 전에 실시간 주가와 최신 실적·뉴스를 웹검색으로 확인하고, 데이터 기준 시각을 한국시간(KST)으로 밝혀 주세요.',
+      '매수·매도 의견을 낼 경우 손절가, 베어케이스(하락 시나리오)와 그에 대한 반박, 리스크 대비 리워드 비율(최소 3:1 충족 여부)을 반드시 포함해 주세요.',
+      '확인되지 않은 수치는 추정이라고 명시하고, 투자 판단의 최종 책임은 본인에게 있다는 점을 전제로 답해 주세요.'
+    ],
+    format: [
+      '결론(의견) → 핵심 근거 → 밸류에이션 → 리스크 → 매매 전략(진입가·손절가·목표가) 순서로 정리해 주세요.'
+    ]
+  },
+  tax: {
+    label: '세무·법률·행정', role: '부동산·상속·농업 분야에 밝은 세무사이자 행정 전문가',
+    kw: ['세금', '양도세', '상속', '증여', '취득세', '종부세', '재산세', '농지', '면세유', '영농', '법령', '법률', '법적', '조례', '신고', '공제', '감면', '계약서', '소송'],
+    opts: ['web', 'honest', 'sources', 'clarify'],
+    rules: [
+      '최신 개정 법령 기준으로 답하고, 최근 연도별 개정 사항이 있으면 반드시 짚어 주세요. 웹검색으로 현행 규정을 확인해 주세요.',
+      '근거 조문(법률명·조항)을 함께 적어 주세요.',
+      '해석이 갈리거나 불확실한 부분은 단정하지 말고, 국세청 사전답변·세무사·변호사 상담이 필요하다고 명시해 주세요.'
+    ],
+    format: [
+      '결론 → 적용 요건 체크리스트 → 근거 조문 → 주의사항 → 확인이 필요한 사항 순서로 정리해 주세요.'
+    ]
+  },
+  academy: {
+    label: '학원 홍보', role: '학부모 마음을 잘 아는 교육 서비스 마케팅 전문가',
+    kw: ['학원', '전단', '원생', '학부모', '수강', '교습', '방학특강', '눈높이'],
+    opts: ['honest', 'variants'],
+    rules: [
+      '학원법상 광고 시 교습비 등 표시 의무를 고려하고, 합격률·성적 향상 같은 검증되지 않은 수치나 과장 표현은 쓰지 마세요.'
+    ],
+    format: ['학부모가 3초 안에 핵심을 알 수 있게 헤드라인-혜택-행동유도(전화·방문) 구조로 써 주세요.']
+  },
+  write: {
+    label: '글·문서 작성', role: '읽는 사람 입장에서 쉽게 쓰는 전문 에디터',
+    kw: ['이메일', '메일', '문자', '안내문', '공지', '보고서', '제안서', '글 써', '작성해', '다듬어', '요약해'],
+    opts: ['honest', 'selfcheck'],
+    rules: ['읽는 사람이 누구인지 고려해 어투와 길이를 맞춰 주세요.'],
+    format: []
+  },
+  code: {
+    label: '개발·엑셀·자동화', role: '실무 자동화 경험이 많은 시니어 개발자',
+    kw: ['코드', '프로그램', '엑셀', '함수', '파이썬', 'python', '자바스크립트', '자동화', '스크립트', '에러', '오류', '홈페이지', '앱'],
+    opts: ['honest', 'clarify', 'selfcheck'],
+    rules: [
+      '비전공자도 그대로 따라 할 수 있게 설치·실행 방법까지 단계별로 알려 주세요.',
+      '다른 사이트 자동 접속·수집처럼 약관 위반이나 차단 위험이 있는 방법이라면 먼저 그 위험을 알려 주세요.'
+    ],
+    format: ['전체 코드는 한 번에 복사할 수 있게 하나의 코드 블록으로 주세요.']
+  }
+};
+
+const OPTS = {
+  web:        ['최신 정보는 웹검색으로 확인', '시세·법령·세금·주가처럼 바뀔 수 있는 정보는 반드시 웹검색으로 최신 내용을 확인한 뒤 답해 주세요. 확인한 날짜를 함께 적어 주세요.'],
+  honest:     ['모르면 모른다고 (추측 금지)', '확실하지 않은 내용은 추측해서 채우지 말고 "확인이 필요합니다"라고 솔직하게 말해 주세요.'],
+  sources:    ['근거·출처 표시', '중요한 주장에는 근거나 출처를 함께 적어 주세요.'],
+  clarify:    ['정보가 부족하면 먼저 질문', '답의 질을 크게 좌우하는 정보가 빠져 있다면, 답하기 전에 꼭 필요한 질문을 최대 3개까지 먼저 해 주세요. 사소한 부분은 합리적으로 가정하고 그 가정을 밝혀 주세요.'],
+  conclusion: ['결론부터 말하기', '결론을 맨 앞에 한두 문장으로 먼저 말하고, 근거와 설명은 그 뒤에 써 주세요.'],
+  variants:   ['여러 버전·대안 제시', '한 가지 답만 주지 말고, 방향이 다른 대안을 함께 제시해 주세요.'],
+  selfcheck:  ['답변 후 스스로 검토', '답을 마무리하기 전에 요청 조건을 모두 지켰는지 스스로 점검하고, 빠진 것이 있으면 보완해 주세요.'],
+  tone:       ['존댓말 구어체로', '자연스러운 한국어 구어체 존댓말로, 서론과 미사여구 없이 핵심 위주로 답해 주세요.']
+};
+
+const FMT = {
+  summary: '핵심만 짧게 요약해 주세요.',
+  steps: '번호를 매긴 단계별 실행 가이드로 정리해 주세요.',
+  table: '비교가 한눈에 보이도록 표로 정리해 주세요.',
+  variants: '서로 다른 방향의 여러 버전으로 제시해 주세요.',
+  report: '제목, 요약, 본문, 결론이 있는 보고서 형식으로 정리해 주세요.',
+  checklist: '바로 체크하며 쓸 수 있는 체크리스트 형식으로 정리해 주세요.'
+};
+const LEN = { short: '전체 분량은 5줄 안팎으로 짧게 해 주세요.', mid: '분량은 적당히, 핵심이 빠지지 않을 정도로 해 주세요.', long: '빠짐없이 자세하게 설명해 주세요.' };
+
+const $ = id => document.getElementById(id);
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+
+let cat = 'general', catManual = false, optState = {};
+
+function renderCats() {
+  $('cats').innerHTML = '';
+  Object.entries(CATS).forEach(([k, c]) => {
+    const b = document.createElement('button');
+    b.className = 'chip' + (k === cat ? ' on' : '');
+    b.textContent = c.label;
+    b.onclick = () => { catManual = true; setCat(k); $('autoNote').textContent = ''; };
+    $('cats').appendChild(b);
+  });
+}
+
+function setCat(k) {
+  cat = k;
+  optState = {};
+  Object.keys(OPTS).forEach(o => optState[o] = CATS[k].opts.includes(o) || o === 'tone');
+  renderCats(); renderOpts(); build();
+}
+
+function renderOpts() {
+  $('opts').innerHTML = '';
+  Object.entries(OPTS).forEach(([k, [label]]) => {
+    const l = document.createElement('label');
+    l.className = 'opt';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.checked = !!optState[k];
+    cb.onchange = () => { optState[k] = cb.checked; build(); };
+    const s = document.createElement('span'); s.textContent = label;
+    l.append(cb, s);
+    $('opts').appendChild(l);
+  });
+}
+
+const NOT_TICKER = ['AI', 'PDF', 'URL', 'PC', 'TV', 'KB', 'LH', 'SNS', 'SEO', 'HTML', 'CSS', 'API', 'OK'];
+function detect(text) {
+  const t = text.toLowerCase();
+  let best = 'general', bestScore = 0;
+  Object.entries(CATS).forEach(([k, c]) => {
+    let s = c.kw.reduce((n, w) => n + (t.includes(w.toLowerCase()) ? 1 : 0), 0);
+    if (k === 'stock' && (text.match(/\b[A-Z]{2,5}\b/g) || []).some(w => !NOT_TICKER.includes(w))) s += 1;
+    if (s > bestScore) { best = k; bestScore = s; }
+  });
+  return best;
+}
+
+function section(tag, body, md) {
+  if (!body) return '';
+  return md ? `## ${tag}\n${body}\n\n` : `<${tag}>\n${body}\n</${tag}>\n\n`;
+}
+const bullets = arr => arr.map(s => '- ' + s).join('\n');
+
+function build() {
+  const q = $('q').value.trim();
+  const c = CATS[cat];
+  const md = $('ai').value !== 'claude';
+  const profile = $('profile').value.trim();
+  const goal = $('goal').value.trim();
+  const ctx = $('ctx').value.trim();
+  const ref = $('ref').value.trim();
+  const avoid = $('avoid').value.trim();
+
+  const bg = [];
+  if (profile) bg.push('질문자 소개: ' + profile);
+  if (ctx) bg.push('상황: ' + ctx);
+  if (goal) bg.push('이 답변의 용도: ' + goal);
+
+  const rules = [...c.rules];
+  if (avoid) rules.push('다음은 피해 주세요: ' + avoid);
+
+  const format = [...c.format];
+  if ($('fmt').value) format.push(FMT[$('fmt').value]);
+  if ($('len').value) format.push(LEN[$('len').value]);
+
+  const work = Object.keys(OPTS).filter(k => optState[k]).map(k => OPTS[k][1]);
+
+  let p = `당신은 ${c.role}입니다. 아래 요청을 정확히 이해하고, 질문자가 바로 활용할 수 있는 최상의 답을 주세요.\n\n`;
+  p += section('요청', q || '(여기에 질문이 들어갑니다)', md);
+  p += section('배경', bg.join('\n'), md);
+  p += section('참고자료', ref, md);
+  p += section('지켜야 할 조건', bullets(rules), md);
+  p += section('답변 방식', bullets(work), md);
+  p += section('출력 형식', bullets(format), md);
+  $('out').value = p.trim();
+  grade(q, goal, ctx);
+  saveDraft();
+}
+
+function grade(q, goal, ctx) {
+  const checks = [
+    [q.length >= 15, '질문이 구체적이에요', '질문을 한 문장 이상으로 조금 더 구체적으로 적어 보세요'],
+    [!!goal, '목적이 들어갔어요', '어디에 쓸지(목적)를 적으면 답이 훨씬 맞춤형이 돼요'],
+    [!!ctx, '상황 정보가 있어요', '숫자·지역·날짜 같은 상황 정보를 넣어 보세요'],
+    [/\d/.test(q + ctx), '숫자 정보가 있어요', '가격, 평수, 연도 등 숫자가 있으면 정확도가 올라가요'],
+    [!!($('fmt').value || CATS[cat].format.length), '결과 형태가 정해졌어요', '원하는 결과 형태(표, 요약 등)를 골라 보세요']
+  ];
+  const n = checks.filter(c => c[0]).length;
+  const score = Math.round(n / checks.length * 100);
+  $('barFill').style.width = score + '%';
+  $('score').textContent = score + '점';
+  $('tips').innerHTML = '';
+  checks.sort((a, b) => a[0] - b[0]).forEach(([ok, good, bad]) => {
+    const li = document.createElement('li');
+    if (ok) li.className = 'ok';
+    li.textContent = (ok ? '✓ ' : '+ ') + (ok ? good : bad);
+    $('tips').appendChild(li);
+  });
+}
+
+function toast(msg) {
+  $('toast').textContent = msg; $('toast').classList.add('show');
+  clearTimeout(toast.t); toast.t = setTimeout(() => $('toast').classList.remove('show'), 2200);
+}
+
+async function copyText() {
+  const t = $('out').value;
+  try { await navigator.clipboard.writeText(t); }
+  catch (e) { $('out').select(); document.execCommand('copy'); }
+  addHistory();
+}
+
+function addHistory() {
+  const q = $('q').value.trim();
+  if (!q) return;
+  const h = store.get('pb_hist', []).filter(x => x.q !== q);
+  h.unshift({ q, cat, prompt: $('out').value, at: Date.now() });
+  store.set('pb_hist', h.slice(0, 20));
+  renderHistory();
+}
+
+function renderHistory() {
+  const h = store.get('pb_hist', []);
+  $('histCard').hidden = !h.length;
+  $('hist').innerHTML = '';
+  h.forEach(item => {
+    const li = document.createElement('li');
+    const s = document.createElement('span');
+    s.textContent = `[${(CATS[item.cat] || CATS.general).label}] ${item.q}`;
+    const b = document.createElement('button');
+    b.textContent = '불러오기';
+    b.onclick = () => { $('out').value = item.prompt; $('out').scrollIntoView({ behavior: 'smooth', block: 'center' }); };
+    li.append(s, b);
+    $('hist').appendChild(li);
+  });
+}
+
+const FIELDS = ['q', 'goal', 'ctx', 'fmt', 'len', 'ref', 'avoid', 'ai'];
+function saveDraft() {
+  const d = { cat, catManual, optState };
+  FIELDS.forEach(f => d[f] = $(f).value);
+  store.set('pb_draft', d);
+  store.set('pb_profile', $('profile').value);
+}
+
+$('copy').onclick = async () => { await copyText(); toast('복사했어요'); };
+$('copyOpen').onclick = async () => {
+  await copyText();
+  const urls = {
+    claude: 'https://claude.ai/new',
+    chatgpt: 'https://chatgpt.com/',
+    gemini: 'https://gemini.google.com/app'
+  };
+  window.open(urls[$('ai').value], '_blank', 'noopener');
+  toast('복사했어요. 열린 창에 붙여넣기 하세요');
+};
+$('reset').onclick = () => {
+  ['q', 'goal', 'ctx', 'ref', 'avoid'].forEach(f => $(f).value = '');
+  $('fmt').value = ''; $('len').value = '';
+  catManual = false; $('autoNote').textContent = '';
+  setCat('general'); $('q').focus();
+};
+
+$('q').addEventListener('input', () => {
+  if (!catManual) {
+    const d = detect($('q').value);
+    if (d !== cat) {
+      setCat(d);
+      $('autoNote').textContent = d === 'general' ? '' : `'${CATS[d].label}' 분야로 자동 선택했어요.`;
+      return;
+    }
+  }
+  build();
+});
+['goal', 'ctx', 'ref', 'avoid', 'profile'].forEach(f => $(f).addEventListener('input', build));
+['fmt', 'len', 'ai'].forEach(f => $(f).addEventListener('change', build));
+
+(function init() {
+  $('profile').value = store.get('pb_profile', '');
+  const d = store.get('pb_draft', null);
+  if (d) {
+    FIELDS.forEach(f => { if (d[f] !== undefined) $(f).value = d[f]; });
+    cat = CATS[d.cat] ? d.cat : 'general';
+    catManual = !!d.catManual;
+    setCat(cat);
+    if (d.optState) { optState = d.optState; renderOpts(); build(); }
+  } else {
+    setCat('general');
+  }
+  renderHistory();
+})();
+</script>
+</body>
+</html>
