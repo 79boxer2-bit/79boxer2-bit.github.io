@@ -65,7 +65,6 @@ details summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--sky-da
 .btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
 .btn{display:inline-block;text-align:center;text-decoration:none;border:0;border-radius:10px;padding:11px 16px;font:inherit;font-size:14px;font-weight:700;cursor:pointer;background:var(--sky-light);color:var(--sky-dark)}
 .btn.main{background:var(--sky);color:#fff;flex:1 1 0;min-width:0;padding-inline:8px}
-.open-label{font-size:13px;font-weight:700;margin-top:12px}
 .btn:active{transform:scale(.98)}
 .hint{font-size:12px;color:var(--gray);margin-top:8px}
 .hist{list-style:none;display:flex;flex-direction:column;gap:6px}
@@ -148,17 +147,11 @@ details summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--sky-da
     <ul class="tips" id="tips"></ul>
     <label class="f">아래 내용은 직접 고쳐도 됩니다</label>
     <textarea id="out" spellcheck="false"></textarea>
-    <div class="open-label">복사하고 바로 열기</div>
     <div class="btns">
-      <a class="btn main open-ai" href="https://claude.ai/new" target="_blank" rel="noopener">Claude</a>
-      <a class="btn main open-ai" href="https://chatgpt.com/" target="_blank" rel="noopener">ChatGPT</a>
-      <a class="btn main open-ai" href="https://gemini.google.com/app" target="_blank" rel="noopener">Gemini</a>
-    </div>
-    <div class="btns">
-      <button class="btn" id="copy">복사만</button>
+      <button class="btn main" id="copy">프롬프트 복사</button>
       <button class="btn" id="reset">새 질문</button>
     </div>
-    <p class="hint">AI 창이 열리면 입력칸에 붙여넣기(길게 누르기 또는 Ctrl+V) 하세요. 자동 복사가 안 되면 완성된 프롬프트 칸을 길게 눌러 전체 선택 후 복사하세요. 입력 내용은 서버로 전송되지 않고 이 기기에서만 처리됩니다.</p>
+    <p class="hint">복사한 뒤 쓰시는 AI 입력칸에 붙여넣기(길게 누르기 또는 Ctrl+V) 하세요. 자동 복사가 안 되면 완성된 프롬프트 칸을 길게 눌러 전체 선택 후 복사하세요. 입력 내용은 서버로 전송되지 않고 이 기기에서만 처리됩니다.</p>
   </section>
 
   <section class="card" id="histCard" hidden>
@@ -500,11 +493,7 @@ function saveDraft() {
   store.set('pb_profile', $('profile').value);
 }
 
-$('copy').onclick = () => copyText().then(ok => { if (ok) toast('복사했어요'); });
-// 링크 자체가 새 탭을 열고, 여기서는 복사만 한다 (팝업 차단 회피)
-document.querySelectorAll('.open-ai').forEach(a => {
-  a.onclick = () => copyText().then(ok => { if (ok) toast('복사했어요. 열린 창에 붙여넣기 하세요'); });
-});
+$('copy').onclick = () => copyText().then(ok => { if (ok) toast('복사했어요. AI 입력칸에 붙여넣기 하세요'); });
 $('reset').onclick = () => {
   ['q', 'goal', 'ctx', 'ref', 'avoid'].forEach(f => $(f).value = '');
   $('fmt').value = ''; $('len').value = '';
