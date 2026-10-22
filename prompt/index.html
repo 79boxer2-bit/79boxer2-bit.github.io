@@ -64,7 +64,8 @@ details summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--sky-da
 #out{min-height:280px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;line-height:1.6}
 .btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
 .btn{display:inline-block;text-align:center;text-decoration:none;border:0;border-radius:10px;padding:11px 16px;font:inherit;font-size:14px;font-weight:700;cursor:pointer;background:var(--sky-light);color:var(--sky-dark)}
-.btn.main{background:var(--sky);color:#fff;flex:1 1 100%}
+.btn.main{background:var(--sky);color:#fff;flex:1 1 0;min-width:0;padding-inline:8px}
+.open-label{font-size:13px;font-weight:700;margin-top:12px}
 .btn:active{transform:scale(.98)}
 .hint{font-size:12px;color:var(--gray);margin-top:8px}
 .hist{list-style:none;display:flex;flex-direction:column;gap:6px}
@@ -139,16 +140,6 @@ details summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--sky-da
   <section class="card">
     <h2><span class="step">3</span>답변 규칙</h2>
     <div class="opts" id="opts"></div>
-    <div class="grid2">
-      <div>
-        <label class="f">어떤 AI에 넣으실 건가요?</label>
-        <select id="ai">
-          <option value="claude">Claude</option>
-          <option value="chatgpt">ChatGPT</option>
-          <option value="gemini">Gemini</option>
-        </select>
-      </div>
-    </div>
   </section>
 
   <section class="card">
@@ -157,8 +148,13 @@ details summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--sky-da
     <ul class="tips" id="tips"></ul>
     <label class="f">아래 내용은 직접 고쳐도 됩니다</label>
     <textarea id="out" spellcheck="false"></textarea>
+    <div class="open-label">복사하고 바로 열기</div>
     <div class="btns">
-      <a class="btn main" id="copyOpen" href="https://claude.ai/new" target="_blank" rel="noopener">복사하고 Claude 열기</a>
+      <a class="btn main open-ai" href="https://claude.ai/new" target="_blank" rel="noopener">Claude</a>
+      <a class="btn main open-ai" href="https://chatgpt.com/" target="_blank" rel="noopener">ChatGPT</a>
+      <a class="btn main open-ai" href="https://gemini.google.com/app" target="_blank" rel="noopener">Gemini</a>
+    </div>
+    <div class="btns">
       <button class="btn" id="copy">복사만</button>
       <button class="btn" id="reset">새 질문</button>
     </div>
@@ -381,16 +377,15 @@ function detect(text) {
   return best;
 }
 
-function section(tag, body, md) {
+function section(tag, body) {
   if (!body) return '';
-  return md ? `## ${tag}\n${body}\n\n` : `<${tag}>\n${body}\n</${tag}>\n\n`;
+  return `<${tag}>\n${body}\n</${tag}>\n\n`;
 }
 const bullets = arr => arr.map(s => '- ' + s).join('\n');
 
 function build() {
   const q = $('q').value.trim();
   const c = CATS[cat];
-  const md = $('ai').value !== 'claude';
   const profile = $('profile').value.trim();
   const goal = $('goal').value.trim();
   const ctx = $('ctx').value.trim();
@@ -416,13 +411,13 @@ function build() {
     : '';
 
   let p = `당신은 ${c.role}입니다. 아래 요청을 정확히 이해하고, 질문자가 바로 활용할 수 있는 최상의 답을 주세요.\n\n`;
-  p += section('요청', q || '(여기에 질문이 들어갑니다)', md);
-  p += section('배경', bg.join('\n'), md);
-  p += section('참고자료', ref, md);
-  p += section('빠진 정보', missingText, md);
-  p += section('지켜야 할 조건', bullets(rules), md);
-  p += section('답변 방식', bullets(work), md);
-  p += section('출력 형식', bullets(format), md);
+  p += section('요청', q || '(여기에 질문이 들어갑니다)');
+  p += section('배경', bg.join('\n'));
+  p += section('참고자료', ref);
+  p += section('빠진 정보', missingText);
+  p += section('지켜야 할 조건', bullets(rules));
+  p += section('답변 방식', bullets(work));
+  p += section('출력 형식', bullets(format));
   $('out').value = p.trim();
   renderAsks();
   grade(q, goal, ctx);
@@ -497,7 +492,7 @@ function renderHistory() {
   });
 }
 
-const FIELDS = ['q', 'goal', 'ctx', 'fmt', 'len', 'ref', 'avoid', 'ai'];
+const FIELDS = ['q', 'goal', 'ctx', 'fmt', 'len', 'ref', 'avoid'];
 function saveDraft() {
   const d = { cat, catManual, optState };
   FIELDS.forEach(f => d[f] = $(f).value);
@@ -505,20 +500,11 @@ function saveDraft() {
   store.set('pb_profile', $('profile').value);
 }
 
-const AI_LINKS = {
-  claude: ['https://claude.ai/new', 'Claude'],
-  chatgpt: ['https://chatgpt.com/', 'ChatGPT'],
-  gemini: ['https://gemini.google.com/app', 'Gemini']
-};
-function syncAiLink() {
-  const [url, name] = AI_LINKS[$('ai').value] || AI_LINKS.claude;
-  $('copyOpen').href = url;
-  $('copyOpen').textContent = `복사하고 ${name} 열기`;
-}
 $('copy').onclick = () => copyText().then(ok => { if (ok) toast('복사했어요'); });
 // 링크 자체가 새 탭을 열고, 여기서는 복사만 한다 (팝업 차단 회피)
-$('copyOpen').onclick = () => copyText().then(ok => { if (ok) toast('복사했어요. 열린 창에 붙여넣기 하세요'); });
-$('ai').addEventListener('change', syncAiLink);
+document.querySelectorAll('.open-ai').forEach(a => {
+  a.onclick = () => copyText().then(ok => { if (ok) toast('복사했어요. 열린 창에 붙여넣기 하세요'); });
+});
 $('reset').onclick = () => {
   ['q', 'goal', 'ctx', 'ref', 'avoid'].forEach(f => $(f).value = '');
   $('fmt').value = ''; $('len').value = '';
@@ -538,7 +524,7 @@ $('q').addEventListener('input', () => {
   build();
 });
 ['goal', 'ctx', 'ref', 'avoid', 'profile'].forEach(f => $(f).addEventListener('input', build));
-['fmt', 'len', 'ai'].forEach(f => $(f).addEventListener('change', build));
+['fmt', 'len'].forEach(f => $(f).addEventListener('change', build));
 
 (function init() {
   $('profile').value = store.get('pb_profile', '');
@@ -552,7 +538,6 @@ $('q').addEventListener('input', () => {
   } else {
     setCat('general');
   }
-  syncAiLink();
   renderHistory();
 })();
 </script>
