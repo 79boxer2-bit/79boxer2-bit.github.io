@@ -12,19 +12,24 @@
   --ok:#2e7d32; --ok-bg:#e8f5e9; --warn:#c77700; --warn-bg:#fff4e0;
 }
 @media (prefers-color-scheme: dark){
-  :root{
+  :root:not([data-theme="light"]){
     --sky:#4aa8ea; --sky-dark:#8ccaf5; --sky-light:#16324a;
     --ink:#e8ecef; --gray:#9aa3ab; --line:#2c343b; --bg:#12171c; --card:#1a2128;
-    --ok:#7ccf80; --ok-bg:#1d3320; --warn:#f0b35a; --warn-bg:#3a2c14;
+    --ok:#7ccf80; --ok-bg:#1d3320; --warn:#f0b35a; --warn-bg:#3a2c14; color-scheme:dark;
   }
+}
+:root[data-theme="dark"]{
+    --sky:#4aa8ea; --sky-dark:#8ccaf5; --sky-light:#16324a;
+    --ink:#e8ecef; --gray:#9aa3ab; --line:#2c343b; --bg:#12171c; --card:#1a2128;
+    --ok:#7ccf80; --ok-bg:#1d3320; --warn:#f0b35a; --warn-bg:#3a2c14; color-scheme:dark;
 }
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;background:var(--bg);color:var(--ink);line-height:1.5;font-size:14px}
-header{background:linear-gradient(135deg,#12354e,#1e6ba8);color:#fff;padding:22px 16px}
+header{background:linear-gradient(135deg,#12354e,#1e6ba8);color:#fff;padding-block:22px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .wrap{max-width:760px;margin:0 auto}
 header h1{font-size:20px;font-weight:800;letter-spacing:-.4px}
 header p{font-size:13px;opacity:.85;margin-top:4px}
-main{max-width:760px;margin:0 auto;padding:14px 16px 60px;display:flex;flex-direction:column;gap:12px}
+main{max-width:760px;margin:0 auto;padding-block:14px 60px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:12px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
 .card h2{font-size:15px;font-weight:800;margin-bottom:10px;display:flex;align-items:center;gap:6px}
 .step{display:inline-flex;width:22px;height:22px;border-radius:50%;background:var(--sky);color:#fff;font-size:12px;align-items:center;justify-content:center}
@@ -53,7 +58,7 @@ details summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--sky-da
 .tips li.ok{background:var(--ok-bg);color:var(--ok)}
 #out{min-height:280px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;line-height:1.6}
 .btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-.btn{border:0;border-radius:10px;padding:11px 16px;font:inherit;font-size:14px;font-weight:700;cursor:pointer;background:var(--sky-light);color:var(--sky-dark)}
+.btn{display:inline-block;text-align:center;text-decoration:none;border:0;border-radius:10px;padding:11px 16px;font:inherit;font-size:14px;font-weight:700;cursor:pointer;background:var(--sky-light);color:var(--sky-dark)}
 .btn.main{background:var(--sky);color:#fff;flex:1 1 100%}
 .btn:active{transform:scale(.98)}
 .hint{font-size:12px;color:var(--gray);margin-top:8px}
@@ -146,11 +151,11 @@ details summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--sky-da
     <label class="f">아래 내용은 직접 고쳐도 됩니다</label>
     <textarea id="out" spellcheck="false"></textarea>
     <div class="btns">
-      <button class="btn main" id="copyOpen">복사하고 AI 열기</button>
+      <a class="btn main" id="copyOpen" href="https://claude.ai/new" target="_blank" rel="noopener">복사하고 Claude 열기</a>
       <button class="btn" id="copy">복사만</button>
       <button class="btn" id="reset">새 질문</button>
     </div>
-    <p class="hint">AI 창이 열리면 입력칸에 붙여넣기(길게 누르기 또는 Ctrl+V) 하세요. 입력 내용은 서버로 전송되지 않고 이 기기에서만 처리됩니다.</p>
+    <p class="hint">AI 창이 열리면 입력칸에 붙여넣기(길게 누르기 또는 Ctrl+V) 하세요. 자동 복사가 안 되면 완성된 프롬프트 칸을 길게 눌러 전체 선택 후 복사하세요. 입력 내용은 서버로 전송되지 않고 이 기기에서만 처리됩니다.</p>
   </section>
 
   <section class="card" id="histCard" hidden>
@@ -390,11 +395,20 @@ function toast(msg) {
   clearTimeout(toast.t); toast.t = setTimeout(() => $('toast').classList.remove('show'), 2200);
 }
 
-async function copyText() {
+function copyText() {
   const t = $('out').value;
-  try { await navigator.clipboard.writeText(t); }
-  catch (e) { $('out').select(); document.execCommand('copy'); }
   addHistory();
+  const fallback = () => {
+    $('out').focus(); $('out').select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) {}
+    if (!ok) toast('자동 복사가 막혔어요. 선택된 글을 길게 눌러 복사해 주세요');
+    return ok;
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(t).then(() => true, fallback);
+  }
+  return Promise.resolve(fallback());
 }
 
 function addHistory() {
@@ -430,17 +444,20 @@ function saveDraft() {
   store.set('pb_profile', $('profile').value);
 }
 
-$('copy').onclick = async () => { await copyText(); toast('복사했어요'); };
-$('copyOpen').onclick = async () => {
-  await copyText();
-  const urls = {
-    claude: 'https://claude.ai/new',
-    chatgpt: 'https://chatgpt.com/',
-    gemini: 'https://gemini.google.com/app'
-  };
-  window.open(urls[$('ai').value], '_blank', 'noopener');
-  toast('복사했어요. 열린 창에 붙여넣기 하세요');
+const AI_LINKS = {
+  claude: ['https://claude.ai/new', 'Claude'],
+  chatgpt: ['https://chatgpt.com/', 'ChatGPT'],
+  gemini: ['https://gemini.google.com/app', 'Gemini']
 };
+function syncAiLink() {
+  const [url, name] = AI_LINKS[$('ai').value] || AI_LINKS.claude;
+  $('copyOpen').href = url;
+  $('copyOpen').textContent = `복사하고 ${name} 열기`;
+}
+$('copy').onclick = () => copyText().then(ok => { if (ok) toast('복사했어요'); });
+// 링크 자체가 새 탭을 열고, 여기서는 복사만 한다 (팝업 차단 회피)
+$('copyOpen').onclick = () => copyText().then(ok => { if (ok) toast('복사했어요. 열린 창에 붙여넣기 하세요'); });
+$('ai').addEventListener('change', syncAiLink);
 $('reset').onclick = () => {
   ['q', 'goal', 'ctx', 'ref', 'avoid'].forEach(f => $(f).value = '');
   $('fmt').value = ''; $('len').value = '';
@@ -474,6 +491,7 @@ $('q').addEventListener('input', () => {
   } else {
     setCat('general');
   }
+  syncAiLink();
   renderHistory();
 })();
 </script>
