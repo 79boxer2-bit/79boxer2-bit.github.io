@@ -25,39 +25,39 @@
 }
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;background:var(--bg);color:var(--ink);line-height:1.5;font-size:14px}
-header{background:linear-gradient(135deg,#12354e,#1e6ba8);color:#fff;padding-block:22px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{background:linear-gradient(135deg,#12354e,#1e6ba8);color:#fff;padding-block:22px 0;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .wrap{max-width:760px;margin:0 auto}
 header h1{font-size:20px;font-weight:800;letter-spacing:-.4px}
 header p{font-size:13px;opacity:.85;margin-top:4px}
+.tabs{display:flex;gap:4px;margin-top:16px}
+.tab{flex:1 1 0;min-width:0;border:0;border-radius:12px 12px 0 0;padding:12px 6px;font:inherit;font-size:14px;font-weight:800;cursor:pointer;background:rgba(255,255,255,.14);color:#fff}
+.tab.on{background:var(--bg);color:var(--sky-dark)}
+.tab:focus-visible,.chip:focus-visible,.btn:focus-visible{outline:2px solid var(--sky);outline-offset:2px}
 main{max-width:760px;margin:0 auto;padding-block:14px 60px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:12px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
 .card h2{font-size:15px;font-weight:800;margin-bottom:10px;display:flex;align-items:center;gap:6px}
-.step{display:inline-flex;width:22px;height:22px;border-radius:50%;background:var(--sky);color:#fff;font-size:12px;align-items:center;justify-content:center}
+.step{display:inline-flex;flex:0 0 auto;width:22px;height:22px;border-radius:50%;background:var(--sky);color:#fff;font-size:12px;align-items:center;justify-content:center}
 label.f{display:block;font-size:13px;font-weight:700;margin:12px 0 5px}
 label.f small{font-weight:400;color:var(--gray);margin-left:4px}
+label.f .key{font-size:11px;font-weight:700;color:var(--warn);background:var(--warn-bg);border-radius:5px;padding:1px 5px;margin-left:4px}
 textarea,input[type=text],select{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font:inherit;font-size:14px;background:var(--bg);color:var(--ink);resize:vertical}
 textarea:focus,input:focus,select:focus{outline:2px solid var(--sky);outline-offset:-1px;background:var(--card)}
-#q{min-height:96px;font-size:15px}
+#q{min-height:84px;font-size:15px}
 .chip-row{display:flex;flex-wrap:wrap;gap:6px}
 .chip{border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:13px;font-weight:600;padding:7px 12px;border-radius:99px;cursor:pointer}
 .chip.on{background:var(--sky);border-color:var(--sky);color:#fff}
-.ask-head{font-size:12.5px;font-weight:700;color:var(--sky-dark);margin:2px 0 6px}
-.ask-head small{font-weight:400;color:var(--gray);margin-left:4px}
-#asks{margin-bottom:8px}
-#asks .chip{font-size:12.5px;padding:5px 10px;border-style:dashed}
-#asks .chip.on{background:var(--ok-bg);border-color:var(--ok);border-style:solid;color:var(--ok)}
-.auto-note{font-size:12px;color:var(--gray);margin-top:6px;min-height:18px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+.grid2 .wide{grid-column:1 / -1}
 @media(max-width:520px){.grid2{grid-template-columns:1fr}}
 .opts{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px}
 @media(max-width:520px){.opts{grid-template-columns:1fr}}
 .opt{display:flex;gap:8px;align-items:flex-start;font-size:13px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;cursor:pointer;background:var(--bg)}
 .opt input{margin-top:3px;accent-color:var(--sky)}
-details summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--sky-dark);margin-top:12px}
+details summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--sky-dark);margin-top:14px}
 .meter{display:flex;align-items:center;gap:10px;margin-bottom:8px}
 .bar{flex:1;height:8px;border-radius:99px;background:var(--line);overflow:hidden}
 .bar i{display:block;height:100%;width:0;background:var(--sky);transition:.25s}
-.meter b{font-size:13px;min-width:70px;text-align:right}
+.meter b{font-size:13px;min-width:70px;text-align:right;font-variant-numeric:tabular-nums}
 .tips{list-style:none;display:flex;flex-direction:column;gap:5px}
 .tips li{font-size:12.5px;padding:7px 10px;border-radius:8px;background:var(--warn-bg);color:var(--warn)}
 .tips li.ok{background:var(--ok-bg);color:var(--ok)}
@@ -71,41 +71,38 @@ details summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--sky-da
 .hist li{display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13px}
 .hist li span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hist li button{border:0;background:var(--sky-light);color:var(--sky-dark);border-radius:7px;padding:4px 9px;font-size:12px;cursor:pointer}
-.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:99px;font-size:13px;opacity:0;pointer-events:none;transition:.2s;z-index:9}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:99px;font-size:13px;opacity:0;pointer-events:none;transition:.2s;z-index:9;max-width:calc(100% - 32px)}
 .toast.show{opacity:1}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
 <header><div class="wrap">
   <h1>AI 프롬프트 입력기</h1>
-  <p>질문을 대충 적어도, AI가 가장 잘 알아듣는 형태로 정리해 드립니다.</p>
+  <p>필요한 칸만 채우면, AI가 가장 잘 알아듣는 질문으로 정리해 드립니다.</p>
+  <nav class="tabs" id="tabs"></nav>
 </div></header>
 
 <main>
   <section class="card">
-    <h2><span class="step">1</span>무엇이 궁금하세요?</h2>
-    <textarea id="q" placeholder="예) 남양읍 32평 아파트 매매 광고 문구 써줘 / RKLB 지금 사도 돼? / 아버지 농지 상속받으면 영농상속공제 되나?"></textarea>
-
-    <label class="f">분야 <small>질문을 보고 자동으로 골라 드려요. 직접 바꿔도 됩니다.</small></label>
-    <div class="chip-row" id="cats"></div>
-    <div class="auto-note" id="autoNote"></div>
+    <h2><span class="step">1</span>무엇을 할까요?</h2>
+    <div class="chip-row" id="modes"></div>
+    <label class="f" for="q" id="qLabel">요청</label>
+    <textarea id="q"></textarea>
   </section>
 
   <section class="card">
-    <h2><span class="step">2</span>조금만 더 알려주면 답이 정확해져요 <small style="font-weight:400;color:var(--gray);font-size:12px">(선택)</small></h2>
-    <label class="f">어디에 쓰실 건가요? <small>목적</small></label>
-    <input type="text" id="goal" placeholder="예) 네이버부동산에 올릴 광고 / 매수 여부 판단 / 세무사 상담 전 정리">
+    <h2><span class="step">2</span><span id="fieldsTitle">정보</span></h2>
+    <div class="grid2" id="fields"></div>
 
-    <label class="f">상황·배경 <small>숫자, 지역, 날짜, 이미 아는 것</small></label>
-    <div class="ask-head">이런 정보가 있으면 답이 달라져요 <small>누르면 아래 칸에 항목이 추가됩니다</small></div>
-    <div class="chip-row" id="asks"></div>
-    <textarea id="ctx" rows="4" placeholder="예) 2015년식, 남향, 로열층, 확장, 초등학교 도보 5분, 매매가 4억 2천"></textarea>
+    <label class="f" for="goal">어디에 쓰실 건가요? <small>목적</small></label>
+    <input type="text" id="goal" placeholder="예) 임대인에게 보낼 안내 문자 / 매수 여부 판단 / 세무사 상담 전 정리">
 
     <div class="grid2">
       <div>
-        <label class="f">원하는 결과 형태</label>
+        <label class="f" for="fmt">원하는 결과 형태</label>
         <select id="fmt">
-          <option value="">AI가 알아서</option>
+          <option value="">기본 (분야에 맞게)</option>
           <option value="summary">핵심만 짧게 요약</option>
           <option value="steps">단계별 실행 가이드</option>
           <option value="table">표로 비교</option>
@@ -115,7 +112,7 @@ details summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--sky-da
         </select>
       </div>
       <div>
-        <label class="f">분량</label>
+        <label class="f" for="len">분량</label>
         <select id="len">
           <option value="">AI가 알아서</option>
           <option value="short">짧게 (5줄 안팎)</option>
@@ -127,11 +124,11 @@ details summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--sky-da
 
     <details>
       <summary>더 넣을 것 (참고자료, 피할 것, 내 소개)</summary>
-      <label class="f">참고자료 <small>기사, 표, 기존 글 등을 붙여넣기</small></label>
+      <label class="f" for="ref">참고자료 <small>기사, 계약서 문구, 표 등을 붙여넣기</small></label>
       <textarea id="ref" rows="4"></textarea>
-      <label class="f">피해야 할 것</label>
+      <label class="f" for="avoid">피해야 할 것</label>
       <input type="text" id="avoid" placeholder="예) 전문용어, 과장 표현, 영어 섞기">
-      <label class="f">내 소개 <small>이 기기에만 저장되고 매번 자동으로 들어갑니다</small></label>
+      <label class="f" for="profile">내 소개 <small>이 기기에만 저장되고 세 탭 모두에 자동으로 들어갑니다</small></label>
       <textarea id="profile" rows="3" placeholder="예) 화성시 남양읍에서 17년째 공인중개사무소를 운영하고 있습니다."></textarea>
     </details>
   </section>
@@ -145,11 +142,11 @@ details summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--sky-da
     <h2><span class="step">4</span>완성된 프롬프트</h2>
     <div class="meter"><div class="bar"><i id="barFill"></i></div><b id="score">0점</b></div>
     <ul class="tips" id="tips"></ul>
-    <label class="f">아래 내용은 직접 고쳐도 됩니다</label>
+    <label class="f" for="out">아래 내용은 직접 고쳐도 됩니다</label>
     <textarea id="out" spellcheck="false"></textarea>
     <div class="btns">
       <button class="btn main" id="copy">프롬프트 복사</button>
-      <button class="btn" id="reset">새 질문</button>
+      <button class="btn" id="reset">이 작업 비우기</button>
     </div>
     <p class="hint">복사한 뒤 쓰시는 AI 입력칸에 붙여넣기(길게 누르기 또는 Ctrl+V) 하세요. 자동 복사가 안 되면 완성된 프롬프트 칸을 길게 눌러 전체 선택 후 복사하세요. 입력 내용은 서버로 전송되지 않고 이 기기에서만 처리됩니다.</p>
   </section>
@@ -162,115 +159,216 @@ details summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--sky-da
 <div class="toast" id="toast"></div>
 
 <script>
-const CATS = {
-  general: {
-    label: '일반', role: '질문 분야의 실무 경험이 풍부한 전문가',
-    kw: [], opts: ['honest', 'clarify', 'conclusion'],
-    rules: [], format: [],
-    ask: ['내 입장', '관련 날짜·금액', '이미 알아본 내용']
-  },
-  lease: {
-    label: '부동산 계약·임대차', role: '17년 경력의 공인중개사이자 주택 임대차·매매 분쟁에 밝은 부동산 전문 변호사',
-    kw: ['전세', '월세', '반전세', '임대', '임차', '세입자', '집주인', '임대인', '임차인', '잔금', '보증금', '계약금', '중도금', '계약서', '특약', '수리', '수선', '하자', '고장', '누수', '곰팡이', '결로', '원상복구', '확정일자', '전입', '갱신', '만기', '중개보수', '복비', '이사', '입주', '퇴거', '명도'],
-    opts: ['web', 'honest', 'sources', 'conclusion'],
-    rules: [
-      '민법(임대인의 수선의무 등), 주택임대차보호법, 관련 대법원 판례의 일반적 기준을 근거로 답하고, 근거 조문과 판례 취지를 함께 적어 주세요. 현행 규정은 웹검색으로 확인해 주세요.',
-      '계약서 특약이 있으면 특약이 우선할 수 있으니, 특약 유무에 따라 결론이 어떻게 달라지는지 구분해 주세요.',
-      '원인(노후·자연 고장 / 사용자 과실 / 소모품)이나 수리 규모에 따라 부담 주체가 달라지면 경우를 나눠 설명해 주세요.',
-      '분쟁 소지가 큰 부분은 단정하지 말고, 대한법률구조공단·주택임대차분쟁조정위원회·변호사 상담이 필요하다고 명시해 주세요.'
-    ],
-    format: [
-      '결론(누가 부담하는지) → 판단 기준과 근거 → 경우별 정리 → 지금 바로 할 일 순서로 정리해 주세요.',
-      '질문자가 중개사라면 임대인·임차인에게 보낼 안내 문자 예시와, 다음 계약 때 넣을 특약 문구 예시도 덧붙여 주세요.'
-    ],
-    ask: ['내 입장(중개사/임대인/임차인)', '계약서 특약 내용', '고장·하자 원인과 증상', '입주 시 상태 확인 여부', '수리 견적·비용']
-  },
-  ad: {
-    label: '부동산 광고문구', role: '네이버부동산·직방 매물 광고를 수천 건 써 본 부동산 마케팅 카피라이터',
-    kw: ['광고', '문구', '직방', '네이버부동산', '다방', '매물', '홍보문구', '카피'],
-    opts: ['honest', 'variants'],
-    rules: [
-      '공인중개사법 및 「중개대상물의 표시·광고 명시사항」을 지켜 주세요. 사실과 다르거나 과장된 표현(최저가, 급매 보장, 무조건 상승 등)은 쓰지 마세요.',
-      '제공한 정보에 없는 사실(층수, 면적, 학군 거리 등)은 지어내지 말고, 필요하면 [확인 필요]로 표시해 주세요.'
-    ],
-    format: [
-      '모바일 가독성 기준으로 한 줄 15~25자, 짧게 줄바꿈해 주세요.',
-      '강조점을 달리한 5가지 버전(입지 / 조망 / 인테리어 / 특화공간 / 균형형)으로 제시해 주세요.',
-      '각 버전마다 첫 줄은 시선을 끄는 헤드라인으로 해 주세요.'
-    ],
-    ask: ['거래 유형·가격', '면적·층·향', '입주 가능일', '장점(교통·학군·조망)', '내부 상태·옵션']
-  },
-  blog: {
-    label: '네이버 블로그', role: '네이버 검색 상위 노출 경험이 많은 블로그 콘텐츠 전문 작가',
-    kw: ['블로그', '포스팅', '네이버 글', '게시글', '상위노출', '후기글'],
-    opts: ['web', 'honest', 'selfcheck'],
-    rules: [
-      '쓰기 전에 현재 시점의 네이버 검색 로직(C-Rank, D.I.A., AI 기반 검색 등)을 웹검색으로 확인하고 반영해 주세요. 과거 지식으로만 쓰지 마세요.',
-      '직접 겪은 경험과 현장 전문성이 드러나게 쓰고, 키워드를 억지로 반복하지 마세요.'
-    ],
-    format: [
-      '분량은 공백 포함 2,800~4,000자로 해 주세요.',
-      '사진이 들어갈 자리를 [사진: 설명] 형식으로 표시하고, 사진 설명 중심으로 구성해 주세요.',
-      '제목 후보 3개, 본문, 추천 태그 10개 순서로 주세요.'
-    ],
-    ask: ['핵심 키워드', '읽을 사람', '직접 겪은 사례', '올릴 사진 목록']
+// 탭(분야) → 작업(mode) → 전용 입력칸. key: true 인 칸은 결론을 좌우하는 핵심 정보
+const TABS = {
+  re: {
+    label: '부동산 업무',
+    modes: {
+      lease: {
+        label: '계약·임대차 질문',
+        role: '17년 경력의 공인중개사이자 주택 임대차·매매 분쟁에 밝은 부동산 전문 변호사',
+        qLabel: '궁금한 점', qPh: '예) 전세 잔금 치르고 입주 5일 만에 현관 도어락이 고장 났어요. 수리는 누가 해야 하나요?',
+        opts: ['web', 'honest', 'sources', 'conclusion'],
+        fields: [
+          { id: 'stance', label: '내 입장', type: 'select', options: ['중개사', '임대인(집주인)', '임차인(세입자)', '매도인', '매수인'], key: true },
+          { id: 'deal', label: '계약 종류', type: 'select', options: ['전세', '월세', '반전세', '매매', '기타'], key: true },
+          { id: 'dates', label: '계약일·잔금일·입주일', ph: '예) 계약 9/1, 잔금·입주 10/15' },
+          { id: 'special', label: '계약서 특약', ph: '예) 수리 관련 특약 없음', key: true },
+          { id: 'issue', label: '문제 상황과 원인', type: 'textarea', wide: true, ph: '예) 비밀번호 눌러도 무반응, 배터리 교체해도 동일. 파손 흔적 없음', key: true },
+          { id: 'checked', label: '입주 시 상태 확인', ph: '예) 잔금일에 정상 작동 확인함' },
+          { id: 'cost', label: '비용·견적', ph: '예) 교체 견적 25만 원' }
+        ],
+        rules: [
+          '민법(임대인의 수선의무 등), 주택임대차보호법, 관련 대법원 판례의 일반적 기준을 근거로 답하고, 근거 조문과 판례 취지를 함께 적어 주세요. 현행 규정은 웹검색으로 확인해 주세요.',
+          '계약서 특약이 있으면 특약이 우선할 수 있으니, 특약 유무에 따라 결론이 어떻게 달라지는지 구분해 주세요.',
+          '원인(노후·자연 고장 / 사용자 과실 / 소모품)이나 수리 규모에 따라 부담 주체가 달라지면 경우를 나눠 설명해 주세요.',
+          '분쟁 소지가 큰 부분은 단정하지 말고, 대한법률구조공단·주택임대차분쟁조정위원회·변호사 상담이 필요하다고 명시해 주세요.'
+        ],
+        format: [
+          '결론(누가 부담하는지) → 판단 기준과 근거 → 경우별 정리 → 지금 바로 할 일 순서로 정리해 주세요.',
+          '질문자가 중개사라면 임대인·임차인에게 보낼 안내 문자 예시와, 다음 계약 때 넣을 특약 문구 예시도 덧붙여 주세요.'
+        ]
+      },
+      ad: {
+        label: '매물 광고문구',
+        role: '네이버부동산·직방 매물 광고를 수천 건 써 본 부동산 마케팅 카피라이터',
+        qLabel: '추가 요청', qPh: '비워 두면 "아래 매물 정보로 광고 문구를 써 주세요"로 들어갑니다',
+        defaultQ: '아래 매물 정보로 광고 문구를 써 주세요.',
+        opts: ['honest', 'variants'],
+        fields: [
+          { id: 'platform', label: '올릴 곳', type: 'select', options: ['네이버부동산', '직방', '다방', '블로그·카페', '여러 곳 공통'] },
+          { id: 'deal', label: '거래 유형·가격', ph: '예) 매매 4억 2천 / 전세 2억 8천', key: true },
+          { id: 'complex', label: '단지·평형', ph: '예) ○○아파트 32평(전용 84㎡)', key: true },
+          { id: 'floor', label: '층·향·구조', ph: '예) 15층/20층, 남향, 판상형' },
+          { id: 'move', label: '입주 가능일', ph: '예) 즉시 / 협의' },
+          { id: 'merit', label: '장점', type: 'textarea', wide: true, ph: '예) 초등학교 도보 5분, 올수리, 확장, 시스템에어컨, 공원 조망', key: true }
+        ],
+        rules: [
+          '공인중개사법 및 「중개대상물의 표시·광고 명시사항」을 지켜 주세요. 사실과 다르거나 과장된 표현(최저가, 급매 보장, 무조건 상승 등)은 쓰지 마세요.',
+          '제공한 정보에 없는 사실(층수, 면적, 학군 거리 등)은 지어내지 말고, 필요하면 [확인 필요]로 표시해 주세요.'
+        ],
+        format: [
+          '모바일 가독성 기준으로 한 줄 15~25자, 짧게 줄바꿈해 주세요.',
+          '강조점을 달리한 5가지 버전(입지 / 조망 / 인테리어 / 특화공간 / 균형형)으로 제시해 주세요.',
+          '각 버전마다 첫 줄은 시선을 끄는 헤드라인으로 해 주세요.'
+        ]
+      },
+      blog: {
+        label: '네이버 블로그',
+        role: '네이버 검색 상위 노출 경험이 많은 부동산 블로그 콘텐츠 전문 작가',
+        qLabel: '추가 요청', qPh: '비워 두면 "아래 내용으로 네이버 블로그 글을 써 주세요"로 들어갑니다',
+        defaultQ: '아래 내용으로 네이버 블로그 글을 써 주세요.',
+        opts: ['web', 'honest', 'selfcheck'],
+        fields: [
+          { id: 'topic', label: '글 주제', ph: '예) 남양읍 신축 아파트 전세 시세와 입주 체크포인트', key: true, wide: true },
+          { id: 'keyword', label: '핵심 키워드', ph: '예) 남양읍 아파트 전세', key: true },
+          { id: 'reader', label: '읽을 사람', ph: '예) 남양읍으로 이사 오려는 신혼부부' },
+          { id: 'story', label: '직접 겪은 사례', type: 'textarea', wide: true, ph: '예) 지난달 상담한 신혼부부가 가장 많이 물어본 것', key: true },
+          { id: 'photos', label: '올릴 사진 목록', type: 'textarea', wide: true, ph: '예) 단지 입구, 거실 남향 채광, 주변 초등학교' }
+        ],
+        rules: [
+          '쓰기 전에 현재 시점의 네이버 검색 로직(C-Rank, D.I.A., AI 기반 검색 등)을 웹검색으로 확인하고 반영해 주세요. 과거 지식으로만 쓰지 마세요.',
+          '17년 남양읍 현장 경력, KB부동산·한국부동산원 시세 제공 협력 중개사무소라는 전문성이 자연스럽게 드러나게 쓰고, 키워드를 억지로 반복하지 마세요.'
+        ],
+        format: [
+          '분량은 공백 포함 2,800~4,000자로 해 주세요.',
+          '사진이 들어갈 자리를 [사진: 설명] 형식으로 표시하고, 사진 설명 중심으로 구성해 주세요.',
+          '제목 후보 3개, 본문, 추천 태그 10개 순서로 주세요.'
+        ]
+      },
+      msg: {
+        label: '고객 안내문자',
+        role: '고객 응대 경험이 많은 베테랑 공인중개사',
+        qLabel: '추가 요청', qPh: '비워 두면 "아래 내용으로 보낼 문자를 써 주세요"로 들어갑니다',
+        defaultQ: '아래 내용으로 보낼 문자를 써 주세요.',
+        opts: ['honest', 'variants'],
+        fields: [
+          { id: 'to', label: '받는 사람', type: 'select', options: ['임대인(집주인)', '임차인(세입자)', '매도인', '매수인', '기타'], key: true },
+          { id: 'tone', label: '어투', type: 'select', options: ['정중하게', '친근하게', '단호하지만 예의 있게'] },
+          { id: 'point', label: '꼭 전할 내용', type: 'textarea', wide: true, ph: '예) 도어락 고장 건, 임대인 수선의무 안내, 수리 일정 협의 요청', key: true }
+        ],
+        rules: ['받는 사람이 불쾌하지 않도록 사실 위주로 쓰고, 법적 판단을 단정하는 표현은 피해 주세요.'],
+        format: ['문자 한 통 분량(400자 이내)으로, 어투를 달리한 2가지 버전을 주세요.']
+      }
+    }
   },
   stock: {
-    label: '주식·투자', role: '월가 기관투자자 수준의 분석 프레임워크를 쓰는 주식 애널리스트',
-    kw: ['주식', '주가', '매수', '매도', '종목', '투자', '실적', '목표가', '배당', 'ETF', '나스닥', '코스피', '손절'],
-    opts: ['web', 'honest', 'sources', 'conclusion'],
-    rules: [
-      '분석 전에 실시간 주가와 최신 실적·뉴스를 웹검색으로 확인하고, 데이터 기준 시각을 한국시간(KST)으로 밝혀 주세요.',
-      '매수·매도 의견을 낼 경우 손절가, 베어케이스(하락 시나리오)와 그에 대한 반박, 리스크 대비 리워드 비율(최소 3:1 충족 여부)을 반드시 포함해 주세요.',
-      '확인되지 않은 수치는 추정이라고 명시하고, 투자 판단의 최종 책임은 본인에게 있다는 점을 전제로 답해 주세요.'
-    ],
-    format: [
-      '결론(의견) → 핵심 근거 → 밸류에이션 → 리스크 → 매매 전략(진입가·손절가·목표가) 순서로 정리해 주세요.'
-    ],
-    ask: ['보유 여부·평단가', '투자 기간', '포트폴리오 내 비중', '관심 갖게 된 이유']
+    label: '주식·투자',
+    modes: {
+      trade: {
+        label: '매수·매도 판단',
+        role: '월가 기관투자자 수준의 분석 프레임워크를 쓰는 주식 애널리스트',
+        qLabel: '궁금한 점', qPh: '예) 지금 추가 매수해도 될까요?',
+        opts: ['web', 'honest', 'sources', 'conclusion'],
+        fields: [
+          { id: 'ticker', label: '종목(티커)', ph: '예) RKLB, GOOGL, 삼성전자', key: true },
+          { id: 'horizon', label: '투자 기간', type: 'select', options: ['단기 (1~3개월)', '중기 (6~12개월)', '장기 (3년 이상)'], key: true },
+          { id: 'position', label: '보유 현황', ph: '예) 보유 중, 평단가 $18, 200주 / 미보유', key: true },
+          { id: 'weight', label: '포트폴리오 비중', ph: '예) 전체의 15%' },
+          { id: 'why', label: '관심 갖게 된 이유', type: 'textarea', wide: true, ph: '예) 뉴트론 로켓 첫 발사 일정 발표' }
+        ],
+        rules: [
+          '분석 전에 실시간 주가와 최신 실적·뉴스를 웹검색으로 확인하고, 데이터 기준 시각을 한국시간(KST)으로 밝혀 주세요.',
+          '매수·매도 의견을 낼 경우 손절가, 베어케이스(하락 시나리오)와 그에 대한 반박, 리스크 대비 리워드 비율(최소 3:1 충족 여부)을 반드시 포함해 주세요.',
+          '확인되지 않은 수치는 추정이라고 명시하고, 투자 판단의 최종 책임은 본인에게 있다는 점을 전제로 답해 주세요.'
+        ],
+        format: ['결론(의견) → 핵심 근거 → 밸류에이션 → 리스크 → 매매 전략(진입가·손절가·목표가) 순서로 정리해 주세요.']
+      },
+      news: {
+        label: '실적·뉴스 분석',
+        role: '실적 발표와 뉴스가 주가에 미치는 영향을 분석하는 기관투자자 출신 애널리스트',
+        qLabel: '궁금한 점', qPh: '예) 이번 실적이 주가에 어떤 의미인가요?',
+        opts: ['web', 'honest', 'sources', 'conclusion'],
+        fields: [
+          { id: 'ticker', label: '종목(티커)', ph: '예) GOOGL', key: true },
+          { id: 'position', label: '보유 현황', ph: '예) 보유 중, 평단가 $150' },
+          { id: 'event', label: '분석할 실적·뉴스', type: 'textarea', wide: true, ph: '예) 3분기 실적 발표, 클라우드 매출 성장률 / 기사 내용 붙여넣기', key: true }
+        ],
+        rules: [
+          '실적 수치와 시장 예상치(컨센서스)를 웹검색으로 확인해 비교하고, 데이터 기준 시각을 한국시간(KST)으로 밝혀 주세요.',
+          '이미 주가에 반영된 부분과 아직 반영되지 않은 부분을 구분해 주세요.'
+        ],
+        format: ['한 줄 요약 → 핵심 수치(예상치 대비) → 긍정 요인 → 우려 요인 → 보유자가 할 일 순서로 정리해 주세요.']
+      },
+      pf: {
+        label: '포트폴리오 점검',
+        role: '자산배분과 리스크 관리에 밝은 기관투자자 포트폴리오 매니저',
+        qLabel: '궁금한 점', qPh: '예) 지금 포트폴리오에서 줄이거나 늘릴 종목이 있을까요?',
+        opts: ['web', 'honest', 'conclusion'],
+        fields: [
+          { id: 'holdings', label: '보유 종목·비중·평단가', type: 'textarea', wide: true, ph: '예) GOOGL 40% $150 / RKLB 25% $18 / 현금 35%', key: true },
+          { id: 'goal', label: '투자 목표·기간', ph: '예) 5년 장기 성장', key: true },
+          { id: 'risk', label: '위험 성향', type: 'select', options: ['공격적', '중립', '보수적'], key: true }
+        ],
+        rules: [
+          '각 종목의 최신 주가와 이슈를 웹검색으로 확인하고, 데이터 기준 시각을 한국시간(KST)으로 밝혀 주세요.',
+          '특정 종목·섹터 쏠림, 상관관계, 현금 비중 같은 위험 요소를 짚어 주세요.'
+        ],
+        format: ['전체 진단 → 종목별 한 줄 평가(표) → 위험 요소 → 조정 제안(비중·손절가) 순서로 정리해 주세요.']
+      }
+    }
   },
   tax: {
-    label: '세무·법률·행정', role: '부동산·상속·농업 분야에 밝은 세무사이자 행정 전문가',
-    kw: ['세금', '양도세', '상속', '증여', '취득세', '종부세', '재산세', '농지', '면세유', '영농', '법령', '법률', '법적', '조례', '신고', '공제', '감면', '소송'],
-    opts: ['web', 'honest', 'sources', 'clarify'],
-    rules: [
-      '최신 개정 법령 기준으로 답하고, 최근 연도별 개정 사항이 있으면 반드시 짚어 주세요. 웹검색으로 현행 규정을 확인해 주세요.',
-      '근거 조문(법률명·조항)을 함께 적어 주세요.',
-      '해석이 갈리거나 불확실한 부분은 단정하지 말고, 국세청 사전답변·세무사·변호사 상담이 필요하다고 명시해 주세요.'
-    ],
-    format: [
-      '결론 → 적용 요건 체크리스트 → 근거 조문 → 주의사항 → 확인이 필요한 사항 순서로 정리해 주세요.'
-    ],
-    ask: ['관련 날짜(취득·상속·양도)', '금액', '보유·거주·경작 기간', '가족 관계']
-  },
-  academy: {
-    label: '학원 홍보', role: '학부모 마음을 잘 아는 교육 서비스 마케팅 전문가',
-    kw: ['학원', '전단', '원생', '학부모', '수강', '교습', '방학특강', '눈높이'],
-    opts: ['honest', 'variants'],
-    rules: [
-      '학원법상 광고 시 교습비 등 표시 의무를 고려하고, 합격률·성적 향상 같은 검증되지 않은 수치나 과장 표현은 쓰지 마세요.'
-    ],
-    format: ['학부모가 3초 안에 핵심을 알 수 있게 헤드라인-혜택-행동유도(전화·방문) 구조로 써 주세요.'],
-    ask: ['대상 학년', '과목·프로그램', '교습비', '혜택·이벤트', '문의 방법']
-  },
-  write: {
-    label: '글·문서 작성', role: '읽는 사람 입장에서 쉽게 쓰는 전문 에디터',
-    kw: ['이메일', '메일', '문자', '안내문', '공지', '보고서', '제안서', '글 써', '작성해', '다듬어', '요약해'],
-    opts: ['honest', 'selfcheck'],
-    rules: ['읽는 사람이 누구인지 고려해 어투와 길이를 맞춰 주세요.'],
-    format: [],
-    ask: ['받는 사람', '꼭 전할 내용', '원하는 어투']
-  },
-  code: {
-    label: '개발·엑셀·자동화', role: '실무 자동화 경험이 많은 시니어 개발자',
-    kw: ['코드', '프로그램', '엑셀', '함수', '파이썬', 'python', '자바스크립트', '자동화', '스크립트', '에러', '오류', '홈페이지', '앱'],
-    opts: ['honest', 'clarify', 'selfcheck'],
-    rules: [
-      '비전공자도 그대로 따라 할 수 있게 설치·실행 방법까지 단계별로 알려 주세요.',
-      '다른 사이트 자동 접속·수집처럼 약관 위반이나 차단 위험이 있는 방법이라면 먼저 그 위험을 알려 주세요.'
-    ],
-    format: ['전체 코드는 한 번에 복사할 수 있게 하나의 코드 블록으로 주세요.'],
-    ask: ['사용하는 프로그램·버전', '지금 상황·오류 메시지', '원하는 결과']
+    label: '세무·농업 행정',
+    modes: {
+      inherit: {
+        label: '상속·증여',
+        role: '상속·증여세와 영농상속공제 실무에 밝은 세무사',
+        qLabel: '궁금한 점', qPh: '예) 아버지 농지를 상속받으면 영농상속공제를 받을 수 있나요?',
+        opts: ['web', 'honest', 'sources', 'clarify'],
+        fields: [
+          { id: 'relation', label: '관계', ph: '예) 아버지 → 본인(아들)', key: true },
+          { id: 'date', label: '상속 개시일·증여 예정일', ph: '예) 아직 생존, 증여 검토 중 / 2026.3.5 상속 개시', key: true },
+          { id: 'assets', label: '재산 종류·평가액', type: 'textarea', wide: true, ph: '예) 농지 3,000평(공시지가 약 3억), 주택 1채', key: true },
+          { id: 'farm', label: '영농 여부·기간', ph: '예) 부친 30년 자경, 본인 주말 영농 5년' },
+          { id: 'heirs', label: '상속인 구성', ph: '예) 어머니, 본인, 여동생' }
+        ],
+        rules: [
+          '최신 개정 상속세 및 증여세법 기준으로 답하고, 최근 연도별 개정 사항이 있으면 반드시 짚어 주세요. 웹검색으로 현행 규정을 확인해 주세요.',
+          '근거 조문(법률명·조항)을 함께 적어 주세요.',
+          '해석이 갈리거나 불확실한 부분은 단정하지 말고, 국세청 사전답변·세무사 상담이 필요하다고 명시해 주세요.'
+        ],
+        format: ['결론 → 적용 요건 체크리스트 → 예상 세액(가정 명시) → 근거 조문 → 주의사항 → 확인이 필요한 사항 순서로 정리해 주세요.']
+      },
+      transfer: {
+        label: '양도·취득세',
+        role: '부동산 양도소득세·취득세 실무 경력이 긴 세무사',
+        qLabel: '궁금한 점', qPh: '예) 지금 팔면 양도세가 얼마나 나올까요? 비과세 되나요?',
+        opts: ['web', 'honest', 'sources', 'clarify'],
+        fields: [
+          { id: 'asset', label: '물건 종류·소재지', ph: '예) 아파트, 화성시 남양읍', key: true },
+          { id: 'houses', label: '세대 보유 주택 수', ph: '예) 1세대 2주택(일시적 2주택)', key: true },
+          { id: 'buy', label: '취득일·취득가', ph: '예) 2018.5, 2억 9천', key: true },
+          { id: 'sell', label: '양도 예정일·예정가', ph: '예) 2026.12, 4억 2천', key: true },
+          { id: 'live', label: '거주 기간', ph: '예) 4년 거주' },
+          { id: 'zone', label: '조정대상지역 여부', ph: '예) 모름 / 취득 당시 비조정' }
+        ],
+        rules: [
+          '최신 개정 소득세법·지방세법 기준으로 답하고, 최근 연도별 개정 사항과 한시적 특례가 있으면 반드시 짚어 주세요. 웹검색으로 현행 규정을 확인해 주세요.',
+          '근거 조문(법률명·조항)을 함께 적어 주세요.',
+          '해석이 갈리거나 불확실한 부분은 단정하지 말고, 국세청 사전답변·세무사 상담이 필요하다고 명시해 주세요.'
+        ],
+        format: ['결론(비과세·중과 여부) → 예상 세액 계산표(가정 명시) → 근거 조문 → 절세 방법 → 확인이 필요한 사항 순서로 정리해 주세요.']
+      },
+      farm: {
+        label: '농지·농업 행정',
+        role: '농지법과 농업 행정(면세유, 농업경영체, 직불금 등) 실무에 밝은 행정사',
+        qLabel: '궁금한 점', qPh: '예) 아버지 명의 농지로 면세유를 계속 받으려면 어떻게 해야 하나요?',
+        opts: ['web', 'honest', 'sources', 'clarify'],
+        fields: [
+          { id: 'topic', label: '분야', type: 'select', options: ['면세유', '농업경영체 등록·변경', '농지 취득·처분', '직불금', '농지 상속', '기타'], key: true },
+          { id: 'land', label: '농지 현황', ph: '예) 화성시 논 3,000평, 지목 답', key: true },
+          { id: 'farmer', label: '경작자·영농 경력', ph: '예) 부친 명의, 실경작은 본인이 5년째', key: true },
+          { id: 'situation', label: '지금 상황', type: 'textarea', wide: true, ph: '예) 부친 고령으로 경작이 어려워 명의 변경 검토 중' }
+        ],
+        rules: [
+          '최신 농지법·관련 고시와 지자체·농협 처리 기준을 웹검색으로 확인하고, 최근 개정 사항이 있으면 반드시 짚어 주세요.',
+          '어느 기관(읍·면사무소, 농관원, 농협 등)에 어떤 서류로 신청하는지 구체적으로 알려 주세요.',
+          '불확실하거나 지자체마다 다른 부분은 단정하지 말고, 담당 기관 확인이 필요하다고 명시해 주세요.'
+        ],
+        format: ['결론 → 요건 체크리스트 → 신청 절차(기관·서류·기한) → 주의사항(세무 영향 포함) → 확인이 필요한 사항 순서로 정리해 주세요.']
+      }
+    }
   }
 };
 
@@ -301,73 +399,101 @@ const store = {
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
 };
 
-let cat = 'general', catManual = false, optState = {};
+// 작업별로 입력값을 따로 보관: drafts['re.lease'] = { q, goal, fmt, len, ref, avoid, f: {...}, opts: {...} }
+let tab = 're', mode = 'lease';
+let modeOf = { re: 'lease', stock: 'trade', tax: 'inherit' };
+let drafts = {};
+const COMMON = ['q', 'goal', 'fmt', 'len', 'ref', 'avoid'];
+const M = () => TABS[tab].modes[mode];
+const dkey = () => tab + '.' + mode;
 
-function renderCats() {
-  $('cats').innerHTML = '';
-  Object.entries(CATS).forEach(([k, c]) => {
+function draft() {
+  if (!drafts[dkey()]) {
+    const o = {};
+    Object.keys(OPTS).forEach(k => o[k] = M().opts.includes(k) || k === 'tone');
+    drafts[dkey()] = { f: {}, opts: o };
+  }
+  return drafts[dkey()];
+}
+
+function renderTabs() {
+  $('tabs').innerHTML = '';
+  Object.entries(TABS).forEach(([k, t]) => {
     const b = document.createElement('button');
-    b.className = 'chip' + (k === cat ? ' on' : '');
-    b.textContent = c.label;
-    b.onclick = () => { catManual = true; setCat(k); $('autoNote').textContent = ''; };
-    $('cats').appendChild(b);
+    b.className = 'tab' + (k === tab ? ' on' : '');
+    b.textContent = t.label;
+    b.onclick = () => switchTo(k, modeOf[k]);
+    $('tabs').appendChild(b);
   });
 }
 
-const askKey = a => a.replace(/\(.*\)/, '').trim();
-function askFilled(a) {
-  const re = new RegExp('^\\s*' + askKey(a).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*:\\s*\\S', 'm');
-  return re.test($('ctx').value);
-}
-function renderAsks() {
-  $('asks').innerHTML = '';
-  (CATS[cat].ask || []).forEach(a => {
+function renderModes() {
+  $('modes').innerHTML = '';
+  Object.entries(TABS[tab].modes).forEach(([k, m]) => {
     const b = document.createElement('button');
-    const done = askFilled(a);
-    b.className = 'chip' + (done ? ' on' : '');
-    b.textContent = (done ? '✓ ' : '+ ') + a;
-    b.onclick = () => {
-      if (askFilled(a)) return;
-      const el = $('ctx');
-      el.value = (el.value.trim() ? el.value.replace(/\s*$/, '') + '\n' : '') + askKey(a) + ': ';
-      el.focus(); el.setSelectionRange(el.value.length, el.value.length);
-      build();
-    };
-    $('asks').appendChild(b);
+    b.className = 'chip' + (k === mode ? ' on' : '');
+    b.textContent = m.label;
+    b.onclick = () => switchTo(tab, k);
+    $('modes').appendChild(b);
   });
 }
 
-function setCat(k) {
-  cat = k;
-  optState = {};
-  Object.keys(OPTS).forEach(o => optState[o] = CATS[k].opts.includes(o) || o === 'tone');
-  renderCats(); renderOpts(); build();
+function renderFields() {
+  const d = draft();
+  $('fields').innerHTML = '';
+  $('fieldsTitle').textContent = M().label + ' 정보';
+  M().fields.forEach(fd => {
+    const box = document.createElement('div');
+    if (fd.wide || fd.type === 'textarea') box.className = 'wide';
+    const id = 'f_' + fd.id;
+    const lab = document.createElement('label');
+    lab.className = 'f'; lab.htmlFor = id; lab.textContent = fd.label;
+    if (fd.key) { const k = document.createElement('span'); k.className = 'key'; k.textContent = '핵심'; lab.appendChild(k); }
+    let el;
+    if (fd.type === 'select') {
+      el = document.createElement('select');
+      ['', ...fd.options].forEach(o => {
+        const op = document.createElement('option');
+        op.value = o; op.textContent = o || '선택하세요';
+        el.appendChild(op);
+      });
+    } else if (fd.type === 'textarea') {
+      el = document.createElement('textarea'); el.rows = 3;
+    } else {
+      el = document.createElement('input'); el.type = 'text';
+    }
+    el.id = id;
+    if (fd.ph) el.placeholder = fd.ph;
+    el.value = d.f[fd.id] || '';
+    el.addEventListener(fd.type === 'select' ? 'change' : 'input', () => { d.f[fd.id] = el.value; build(); });
+    box.append(lab, el);
+    $('fields').appendChild(box);
+  });
 }
 
 function renderOpts() {
+  const d = draft();
   $('opts').innerHTML = '';
   Object.entries(OPTS).forEach(([k, [label]]) => {
     const l = document.createElement('label');
     l.className = 'opt';
     const cb = document.createElement('input');
-    cb.type = 'checkbox'; cb.checked = !!optState[k];
-    cb.onchange = () => { optState[k] = cb.checked; build(); };
+    cb.type = 'checkbox'; cb.checked = !!d.opts[k];
+    cb.onchange = () => { d.opts[k] = cb.checked; build(); };
     const s = document.createElement('span'); s.textContent = label;
     l.append(cb, s);
     $('opts').appendChild(l);
   });
 }
 
-const NOT_TICKER = ['AI', 'PDF', 'URL', 'PC', 'TV', 'KB', 'LH', 'SNS', 'SEO', 'HTML', 'CSS', 'API', 'OK'];
-function detect(text) {
-  const t = text.toLowerCase();
-  let best = 'general', bestScore = 0;
-  Object.entries(CATS).forEach(([k, c]) => {
-    let s = c.kw.reduce((n, w) => n + (t.includes(w.toLowerCase()) ? 1 : 0), 0);
-    if (k === 'stock' && (text.match(/\b[A-Z]{2,5}\b/g) || []).some(w => !NOT_TICKER.includes(w))) s += 1;
-    if (s > bestScore) { best = k; bestScore = s; }
-  });
-  return best;
+function switchTo(t, m) {
+  tab = t; mode = m; modeOf[t] = m;
+  const d = draft();
+  COMMON.forEach(f => $(f).value = d[f] || '');
+  $('qLabel').textContent = M().qLabel;
+  $('q').placeholder = M().qPh;
+  renderTabs(); renderModes(); renderFields(); renderOpts(); build();
+  try { history.replaceState(null, '', '#' + t); } catch (e) {}
 }
 
 function section(tag, body) {
@@ -377,71 +503,70 @@ function section(tag, body) {
 const bullets = arr => arr.map(s => '- ' + s).join('\n');
 
 function build() {
-  const q = $('q').value.trim();
-  const c = CATS[cat];
+  const m = M(), d = draft();
+  COMMON.forEach(f => d[f] = $(f).value);
+  const q = d.q.trim() || m.defaultQ || '';
   const profile = $('profile').value.trim();
-  const goal = $('goal').value.trim();
-  const ctx = $('ctx').value.trim();
-  const ref = $('ref').value.trim();
-  const avoid = $('avoid').value.trim();
+  const goal = d.goal.trim();
 
   const bg = [];
   if (profile) bg.push('질문자 소개: ' + profile);
-  if (ctx) bg.push(ctx.includes(':') ? ctx : '상황: ' + ctx);
   if (goal) bg.push('이 답변의 용도: ' + goal);
 
-  const rules = [...c.rules];
-  if (avoid) rules.push('다음은 피해 주세요: ' + avoid);
-
-  const format = [...c.format];
-  if ($('fmt').value) format.push(FMT[$('fmt').value]);
-  if ($('len').value) format.push(LEN[$('len').value]);
-
-  const work = Object.keys(OPTS).filter(k => optState[k]).map(k => OPTS[k][1]);
-  const missing = (c.ask || []).filter(a => !askFilled(a));
-  const missingText = q && missing.length
-    ? '아래 정보가 요청과 배경에 없다면, 결론을 크게 바꾸는 항목은 답하기 전에 먼저 물어보고, 나머지는 경우를 나눠 답해 주세요.\n' + bullets(missing)
+  const filled = m.fields.filter(fd => (d.f[fd.id] || '').trim());
+  const info = filled.map(fd => `${fd.label}: ${d.f[fd.id].trim()}`).join('\n');
+  const missing = m.fields.filter(fd => fd.key && !(d.f[fd.id] || '').trim()).map(fd => fd.label);
+  const missingText = missing.length
+    ? '아래 정보가 없습니다. 결론을 크게 바꾸는 항목은 답하기 전에 먼저 물어보고, 나머지는 경우를 나눠 답해 주세요.\n' + bullets(missing)
     : '';
 
-  let p = `당신은 ${c.role}입니다. 아래 요청을 정확히 이해하고, 질문자가 바로 활용할 수 있는 최상의 답을 주세요.\n\n`;
+  const rules = [...m.rules];
+  if (d.avoid.trim()) rules.push('다음은 피해 주세요: ' + d.avoid.trim());
+  const format = [...m.format];
+  if (d.fmt) format.push(FMT[d.fmt]);
+  if (d.len) format.push(LEN[d.len]);
+  const work = Object.keys(OPTS).filter(k => d.opts[k]).map(k => OPTS[k][1]);
+
+  let p = `당신은 ${m.role}입니다. 아래 요청을 정확히 이해하고, 질문자가 바로 활용할 수 있는 최상의 답을 주세요.\n\n`;
   p += section('요청', q || '(여기에 질문이 들어갑니다)');
   p += section('배경', bg.join('\n'));
-  p += section('참고자료', ref);
+  p += section('정보', info);
   p += section('빠진 정보', missingText);
+  p += section('참고자료', d.ref.trim());
   p += section('지켜야 할 조건', bullets(rules));
   p += section('답변 방식', bullets(work));
   p += section('출력 형식', bullets(format));
   $('out').value = p.trim();
-  renderAsks();
-  grade(q, goal, ctx);
-  saveDraft();
+  grade(m, d, q, goal, missing);
+  store.set('pb3', { tab, modeOf, drafts });
+  store.set('pb_profile', $('profile').value);
 }
 
-function grade(q, goal, ctx) {
-  const checks = [
-    [q.length >= 15, '질문이 구체적이에요', '질문을 한 문장 이상으로 조금 더 구체적으로 적어 보세요'],
-    [!!goal, '목적이 들어갔어요', '어디에 쓸지(목적)를 적으면 답이 훨씬 맞춤형이 돼요'],
-    [!!ctx, '상황 정보가 있어요', '숫자·지역·날짜 같은 상황 정보를 넣어 보세요'],
-    [(CATS[cat].ask || []).filter(askFilled).length * 2 >= (CATS[cat].ask || []).length, '핵심 정보를 절반 이상 채웠어요', '위의 + 항목을 눌러 핵심 정보를 절반 이상 채워 보세요'],
-    [/\d/.test(q + ctx), '숫자 정보가 있어요', '가격, 평수, 연도 등 숫자가 있으면 정확도가 올라가요'],
-    [!!($('fmt').value || CATS[cat].format.length), '결과 형태가 정해졌어요', '원하는 결과 형태(표, 요약 등)를 골라 보세요']
-  ];
-  const n = checks.filter(c => c[0]).length;
-  const score = Math.round(n / checks.length * 100);
+function grade(m, d, q, goal, missing) {
+  const keys = m.fields.filter(fd => fd.key).length;
+  const keyDone = keys - missing.length;
+  const extra = m.fields.some(fd => !fd.key && (d.f[fd.id] || '').trim());
+  const score = Math.round((keys ? keyDone / keys : 1) * 60 + (q.length >= 10 ? 15 : 0) + (goal ? 15 : 0) + (extra ? 10 : 0));
   $('barFill').style.width = score + '%';
   $('score').textContent = score + '점';
+  const tips = [];
+  if (q.length < 10) tips.push([false, '', '1번 칸에 궁금한 점을 한 문장 이상 적어 보세요']);
+  missing.forEach(l => tips.push([false, '', `핵심 정보 '${l}'을(를) 채우면 답이 정확해져요`]));
+  if (!goal) tips.push([false, '', '어디에 쓸지(목적)를 적으면 바로 쓸 수 있는 답이 나와요']);
+  if (keys && !missing.length) tips.push([true, `핵심 정보 ${keys}개를 모두 채웠어요`]);
+  if (goal) tips.push([true, '목적이 들어갔어요']);
   $('tips').innerHTML = '';
-  checks.sort((a, b) => a[0] - b[0]).forEach(([ok, good, bad]) => {
+  tips.forEach(([ok, good, bad]) => {
     const li = document.createElement('li');
     if (ok) li.className = 'ok';
-    li.textContent = (ok ? '✓ ' : '+ ') + (ok ? good : bad);
+    li.textContent = ok ? '✓ ' + good : '+ ' + bad;
     $('tips').appendChild(li);
   });
 }
 
 function toast(msg) {
   $('toast').textContent = msg; $('toast').classList.add('show');
-  clearTimeout(toast.t); toast.t = setTimeout(() => $('toast').classList.remove('show'), 2200);
+  clearTimeout(toast.t); toast.t = setTimeout(() => $('toast').classList.remove('show'), 2400);
 }
 
 function copyText() {
@@ -461,22 +586,24 @@ function copyText() {
 }
 
 function addHistory() {
-  const q = $('q').value.trim();
-  if (!q) return;
-  const h = store.get('pb_hist', []).filter(x => x.q !== q);
-  h.unshift({ q, cat, prompt: $('out').value, at: Date.now() });
-  store.set('pb_hist', h.slice(0, 20));
+  const d = draft();
+  const title = d.q.trim() || Object.values(d.f).find(v => (v || '').trim()) || '';
+  if (!title) return;
+  const label = `${TABS[tab].label} · ${M().label}`;
+  const h = store.get('pb_hist3', []).filter(x => !(x.title === title && x.label === label));
+  h.unshift({ title, label, prompt: $('out').value, at: Date.now() });
+  store.set('pb_hist3', h.slice(0, 20));
   renderHistory();
 }
 
 function renderHistory() {
-  const h = store.get('pb_hist', []);
+  const h = store.get('pb_hist3', []);
   $('histCard').hidden = !h.length;
   $('hist').innerHTML = '';
   h.forEach(item => {
     const li = document.createElement('li');
     const s = document.createElement('span');
-    s.textContent = `[${(CATS[item.cat] || CATS.general).label}] ${item.q}`;
+    s.textContent = `[${item.label}] ${item.title}`;
     const b = document.createElement('button');
     b.textContent = '불러오기';
     b.onclick = () => { $('out').value = item.prompt; $('out').scrollIntoView({ behavior: 'smooth', block: 'center' }); };
@@ -485,48 +612,28 @@ function renderHistory() {
   });
 }
 
-const FIELDS = ['q', 'goal', 'ctx', 'fmt', 'len', 'ref', 'avoid'];
-function saveDraft() {
-  const d = { cat, catManual, optState };
-  FIELDS.forEach(f => d[f] = $(f).value);
-  store.set('pb_draft', d);
-  store.set('pb_profile', $('profile').value);
-}
-
 $('copy').onclick = () => copyText().then(ok => { if (ok) toast('복사했어요. AI 입력칸에 붙여넣기 하세요'); });
 $('reset').onclick = () => {
-  ['q', 'goal', 'ctx', 'ref', 'avoid'].forEach(f => $(f).value = '');
-  $('fmt').value = ''; $('len').value = '';
-  catManual = false; $('autoNote').textContent = '';
-  setCat('general'); $('q').focus();
+  delete drafts[dkey()];
+  switchTo(tab, mode);
+  $('q').focus();
 };
-
-$('q').addEventListener('input', () => {
-  if (!catManual) {
-    const d = detect($('q').value);
-    if (d !== cat) {
-      setCat(d);
-      $('autoNote').textContent = d === 'general' ? '' : `'${CATS[d].label}' 분야로 자동 선택했어요.`;
-      return;
-    }
-  }
-  build();
-});
-['goal', 'ctx', 'ref', 'avoid', 'profile'].forEach(f => $(f).addEventListener('input', build));
+['q', 'goal', 'ref', 'avoid', 'profile'].forEach(f => $(f).addEventListener('input', build));
 ['fmt', 'len'].forEach(f => $(f).addEventListener('change', build));
 
 (function init() {
   $('profile').value = store.get('pb_profile', '');
-  const d = store.get('pb_draft', null);
-  if (d) {
-    FIELDS.forEach(f => { if (d[f] !== undefined) $(f).value = d[f]; });
-    cat = CATS[d.cat] ? d.cat : 'general';
-    catManual = !!d.catManual;
-    setCat(cat);
-    if (d.optState) { optState = d.optState; renderOpts(); build(); }
-  } else {
-    setCat('general');
+  const saved = store.get('pb3', null);
+  if (saved && saved.drafts) {
+    drafts = saved.drafts;
+    Object.keys(TABS).forEach(t => {
+      if (saved.modeOf && TABS[t].modes[saved.modeOf[t]]) modeOf[t] = saved.modeOf[t];
+    });
+    if (TABS[saved.tab]) tab = saved.tab;
   }
+  const h = (location.hash || '').slice(1);
+  if (TABS[h]) tab = h;
+  switchTo(tab, modeOf[tab]);
   renderHistory();
 })();
 </script>
